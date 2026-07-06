@@ -1,6 +1,8 @@
 # Stage 1: build frontend
 FROM node:22-alpine AS frontend
 WORKDIR /app/frontend
+# bust cache so Railway always uses the latest Dockerfile
+ARG CACHEBUST=1
 COPY frontend/package.json ./
 RUN npm install vite@5.4.19 @vitejs/plugin-vue@2.3.4 vue@3.5.17
 COPY frontend/ ./
