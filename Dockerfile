@@ -4,7 +4,7 @@ WORKDIR /app/frontend
 # bust cache so Railway always uses the latest Dockerfile
 ARG CACHEBUST=1
 COPY frontend/package.json ./
-RUN npm install vite@5.4.19 @vitejs/plugin-vue@5.2.4 vue@3.5.17
+RUN npm install --legacy-peer-deps vite@5.4.19 @vitejs/plugin-vue@5.2.4 vue@3.5.17
 COPY frontend/ ./
 RUN npm run build
 
