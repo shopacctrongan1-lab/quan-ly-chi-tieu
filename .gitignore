@@ -10,3 +10,5 @@ fix_*.js
 repair_*.js
 mo-dien-thoai.ps1
 .claude/
+
+*.log
