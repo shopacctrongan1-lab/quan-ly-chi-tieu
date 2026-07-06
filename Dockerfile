@@ -1,8 +1,8 @@
 # Stage 1: build frontend
 FROM node:22-alpine AS frontend
 WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm install
+COPY frontend/package.json ./
+RUN npm install vite@5.4.19 @vitejs/plugin-vue@2.3.4 vue@3.5.17
 COPY frontend/ ./
 RUN npm run build
 
