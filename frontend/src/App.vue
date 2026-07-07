@@ -136,6 +136,10 @@
                 <small>{{ formatDate(e.date) }} • {{ e.category }} • {{ walletName(e.walletId) }}</small>
                 <p v-if="e.note">{{ e.note }}</p>
               </div>
+              <div class="quick-history-actions">
+                <button type="button" @click="editItem(e)">Sửa</button>
+                <button type="button" class="danger" @click="removeItem(e.id)">Xóa</button>
+              </div>
             </article>
           </div>
           <div v-else class="empty-state compact quick-empty">
@@ -189,6 +193,10 @@
                     <time>{{ formatTime(e.createdAt) }}</time>
                   </div>
                   <p>{{ e.note || e.category }} • {{ walletName(e.walletId) }} • {{ e.costKind === 'fixed' ? 'Cố định' : 'Biến đổi' }}</p>
+                  <div class="bank-row-actions">
+                    <button type="button" @click="editItem(e)">Sửa</button>
+                    <button type="button" class="danger" @click="removeItem(e.id)">Xóa</button>
+                  </div>
                 </div>
               </div>
             </article>
@@ -202,7 +210,7 @@
           </div>
         </section>
       </section>
-      <section v-show="activeSection === 'categories'" class="tools-grid"><article class="card"><h2>Danh mục</h2><form @submit.prevent="saveCategory"><input v-model="newCategory.name" placeholder="Tên danh mục"/><button>Thêm</button></form><p v-for="c in categories" :key="c.id" class="chip"><span>{{ c.name }}</span></p></article></section>
+      <section v-show="activeSection === 'categories'" class="tools-grid"><article class="card"><h2>Danh mục</h2><form @submit.prevent="saveCategory"><input v-model="newCategory.name" placeholder="Tên danh mục"/><button>Thêm</button></form><p v-for="c in categories" :key="c.id" class="chip"><span>{{ c.name }}</span><span class="chip-actions"><button type="button" class="danger" @click="removeCategory(c)">Xóa</button></span></p></article></section>
       <section v-show="activeSection === 'goals'" class="tools-grid"><article class="card"><h2>Mục tiêu tiết kiệm</h2><form @submit.prevent="saveGoal"><input v-model="goal.name" placeholder="Mua laptop"/><label class="money-field"><span>Số tiền mục tiêu</span><input v-model="goal.targetAmount" type="text" inputmode="numeric" placeholder="VD: nhập 2 sẽ gợi ý 20k, 200k, 2tr" @blur="normalizeMoney(goal, 'targetAmount')"/><div class="money-presets"><button v-for="x in moneySuggestions(goal.targetAmount)" :key="x" type="button" @click="setMoney(goal, 'targetAmount', x)">{{ shortMoney(x) }}</button></div></label><label class="money-field"><span>Số tiền đã có</span><input v-model="goal.currentAmount" type="text" inputmode="numeric" placeholder="VD: 5tr" @blur="normalizeMoney(goal, 'currentAmount')"/><div class="money-presets"><button v-for="x in moneySuggestions(goal.currentAmount)" :key="x" type="button" @click="setMoney(goal, 'currentAmount', x)">{{ shortMoney(x) }}</button></div></label><label class="date-field"><span>Ngày hoàn thành mục tiêu</span><input v-model="goal.deadline" type="date"/></label><button>Lưu</button></form><div v-for="g in goals" :key="g.id" class="progress"><b>{{ g.name }}</b><span>Cần tiết kiệm/tháng: {{ displayMoney(g.monthlyNeed) }}</span><i class="ok" :style="{width: Math.min(100,g.percent)+'%'}"></i></div></article></section>
       <section v-show="activeSection === 'debts'" class="tools-grid"><article class="card"><h2>Nợ & cho vay</h2><form @submit.prevent="saveDebt"><select v-model="debt.kind"><option value="borrow">Tôi nợ</option><option value="lend">Người khác nợ tôi</option></select><input v-model="debt.person" placeholder="Tên người liên quan"/><label class="money-field"><span>Số tiền nợ / cho vay</span><input v-model="debt.amount" type="text" inputmode="numeric" placeholder="Nhập 1 → chọn 10k / 100k / 1tr" @blur="normalizeMoney(debt, 'amount')"/><div class="money-presets"><button v-for="x in moneySuggestions(debt.amount)" :key="x" type="button" @click="setMoney(debt, 'amount', x)">{{ shortMoney(x) }}</button></div></label><label class="date-field"><span>Ngày hẹn trả / thu nợ</span><input v-model="debt.dueDate" type="date"/></label><textarea v-model="debt.note" placeholder="Ghi chú"></textarea><button>Lưu khoản nợ</button></form><div v-for="d in debts" :key="d.id" class="debt-row">
   <div>
