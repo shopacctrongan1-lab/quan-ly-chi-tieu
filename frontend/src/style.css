@@ -466,11 +466,18 @@ input[type="checkbox"]:checked:after{content:"✓";position:absolute;left:10px;t
   font-size:12px;
 }
 .empty-state.compact{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
   padding:18px;
   border-radius:16px;
   background:rgba(248,250,252,.72);
   border:1px dashed rgba(148,163,184,.35);
 }
+.empty-state.compact b{font-size:15px;color:#1e293b}
+.empty-state.compact span{font-size:13px;color:#64748b}
+.dark .empty-state.compact b{color:#e2e8f0}
+.dark .empty-state.compact span{color:#94a3b8}
 .dark .quick-history-row,.dark .empty-state.compact{
   background:rgba(15,23,42,.72);
   border-color:rgba(148,163,184,.20);
