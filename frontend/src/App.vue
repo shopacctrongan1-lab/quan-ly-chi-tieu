@@ -193,10 +193,6 @@
                     <time>{{ formatTime(e.createdAt) }}</time>
                   </div>
                   <p>{{ e.note || e.category }} • {{ walletName(e.walletId) }} • {{ e.costKind === 'fixed' ? 'Cố định' : 'Biến đổi' }}</p>
-                  <div class="bank-row-actions">
-                    <button type="button" @click="editItem(e)">Sửa</button>
-                    <button type="button" class="danger" @click="removeItem(e.id)">Xóa</button>
-                  </div>
                 </div>
               </div>
             </article>
