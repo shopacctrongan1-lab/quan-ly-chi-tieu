@@ -241,6 +241,7 @@
                 <button type="button" @click="addGoalMoney(g, 1000000)">+1tr</button>
                 <button type="button" class="primary" @click="completeGoal(g)">Đã đạt</button>
                 <button type="button" @click="editGoal(g)">Sửa</button>
+                <button type="button" class="danger" @click="removeGoal(g)">Xóa</button>
               </footer>
             </article>
           </div>
@@ -339,7 +340,8 @@ async function submitAuth(){try{error.value=''; const res=authMode.value==='logi
 async function logout(){await api.logout().catch(()=>{}); setToken(''); user.value=null}
 async function loadData(){try{const [ex,sm,cs,ws,gs,ds,rem]=await Promise.all([api.expenses(filters),api.summary(dashboardQuery()),api.categories(),api.wallets(),api.goals(),api.debts(),api.reminder()]); expenses.value=ex; summary.value=sm; categories.value=cs; wallets.value=ws; goals.value=gs; debts.value=ds; Object.assign(telegramReminder,{enabled:!!rem.enabled,time:rem.time||'21:00',telegramChatId:rem.telegramChatId||''}); if(!form.walletId&&coreWallets.value[0])form.walletId=coreWallets.value[0].id; if(!debt.walletId&&coreWallets.value[0])debt.walletId=coreWallets.value[0].id}catch(e){error.value=e.message}}
 function debouncedLoad(){clearTimeout(timer); timer=setTimeout(loadData,250)}
-function toggleTheme(){dark.value=!dark.value; localStorage.setItem('dark', dark.value?'1':'0')}
+function syncDarkClass(){document.documentElement.classList.toggle('dark-page', dark.value)}
+function toggleTheme(){dark.value=!dark.value; localStorage.setItem('dark', dark.value?'1':'0'); syncDarkClass()}
 function parseMoneyValue(v){
   if(v===null||v===undefined||v==='') return null
   if(typeof v==='number') return v
@@ -402,6 +404,7 @@ async function saveGoal(){normalizeMoney(goal,'targetAmount'); normalizeMoney(go
 async function addGoalMoney(g,amount){await api.saveGoal({name:g.name,targetAmount:g.targetAmount,currentAmount:(Number(g.currentAmount)||0)+amount,deadline:g.deadline}); await loadData()}
 async function completeGoal(g){await api.saveGoal({name:g.name,targetAmount:g.targetAmount,currentAmount:g.targetAmount,deadline:g.deadline}); await loadData()}
 function editGoal(g){Object.assign(goal,{name:g.name,targetAmount:g.targetAmount,currentAmount:g.currentAmount,deadline:g.deadline||''}); scrollTo({top:0,behavior:'smooth'})}
+async function removeGoal(g){if(confirm('Xóa mục tiêu "'+g.name+'"?')){await api.deleteGoal(g.id); await loadData()}}
 async function saveDebt(){normalizeMoney(debt,'amount'); debt.walletId=debt.walletId||coreWallets.value[0]?.id||0; await api.saveDebt(debt); Object.assign(debt,{kind:'borrow',person:'',amount:null,dueDate:'',note:'',walletId:coreWallets.value[0]?.id||0}); await loadData()}
 async function completeDebt(d){await api.completeDebt(d.id,d.walletId); await loadData()}
 async function removeDebt(d){
@@ -418,5 +421,5 @@ function plainMoney(v){return new Intl.NumberFormat('vi-VN').format(v||0)}
 function formatDate(v){return new Intl.DateTimeFormat('vi-VN').format(new Date(v))}
 function formatTime(v){const d=v?new Date(v):new Date(); return d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}
 function walletName(id){return wallets.value.find(w=>w.id===id)?.name || 'Ví'}
-onMounted(async()=>{try{const me=await api.me(); user.value=me; await loadData()}catch(_){}})
+onMounted(async()=>{syncDarkClass(); try{const me=await api.me(); user.value=me; await loadData()}catch(_){}})
 </script>

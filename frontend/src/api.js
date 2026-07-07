@@ -52,6 +52,7 @@ export const api = {
   saveBudget: (payload) => request('/api/budgets', { method: 'POST', body: JSON.stringify(payload) }),
   goals: () => request('/api/goals'),
   saveGoal: (payload) => request('/api/goals', { method: 'POST', body: JSON.stringify(payload) }),
+  deleteGoal: (id) => request(`/api/goals/${id}`, { method: 'DELETE' }),
   debts: () => request('/api/debts'),
   saveDebt: (payload) => request('/api/debts', { method: 'POST', body: JSON.stringify(payload) }),
   completeDebt: (id, walletId) => request(`/api/debts/complete/${id}`, { method: 'POST', body: JSON.stringify({ walletId }) }),

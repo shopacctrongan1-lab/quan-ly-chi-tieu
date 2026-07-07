@@ -1158,6 +1158,17 @@ func (s *Store) SaveGoal(userID int64, in GoalInput) (SavingsGoal, error) {
 	return enrichGoal(g), nil
 }
 
+func (s *Store) DeleteGoal(userID, id int64) error {
+	res, err := s.db.Exec("DELETE FROM goals WHERE id=? AND user_id=?", id, userID)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 // ── debts ─────────────────────────────────────────────────────────────────────
 
 func (s *Store) Debts(userID int64) []Debt {

@@ -44,6 +44,7 @@ func main() {
 	mux.HandleFunc("/api/wallets/transfer", app.auth(app.handleTransfer))
 	mux.HandleFunc("/api/budgets", app.auth(app.handleBudgets))
 	mux.HandleFunc("/api/goals", app.auth(app.handleGoals))
+	mux.HandleFunc("/api/goals/", app.auth(app.handleGoalByID))
 	mux.HandleFunc("/api/debts", app.auth(app.handleDebts))
 	mux.HandleFunc("/api/debts/", app.auth(app.handleDebtByID))
 	mux.HandleFunc("/api/debts/complete/", app.auth(app.handleCompleteDebt))
@@ -275,6 +276,23 @@ func (s *server) handleGoals(w http.ResponseWriter, r *http.Request, u store.Pub
 			g, err := s.store.SaveGoal(u.ID, in)
 			writeResult(w, g, err)
 		}
+	default:
+		writeError(w, 405, "Phương thức không được hỗ trợ")
+	}
+}
+
+func (s *server) handleGoalByID(w http.ResponseWriter, r *http.Request, u store.PublicUser) {
+	id, ok := idFromPath(w, r, "/api/goals/")
+	if !ok {
+		return
+	}
+	switch r.Method {
+	case http.MethodDelete:
+		if err := s.store.DeleteGoal(u.ID, id); err != nil {
+			writeStoreErr(w, err)
+			return
+		}
+		writeJSON(w, 200, map[string]string{"status": "ok"})
 	default:
 		writeError(w, 405, "Phương thức không được hỗ trợ")
 	}

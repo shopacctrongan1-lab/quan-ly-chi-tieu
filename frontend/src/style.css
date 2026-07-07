@@ -1287,3 +1287,33 @@ button,.button{
   .goal-stats{grid-template-columns:1fr 1fr!important}
 }
 @media(max-width:480px){.goal-stats{grid-template-columns:1fr!important}.goal-card footer button{flex:1!important}}
+
+/* Dark mode must cover the whole browser page, not only app center */
+html.dark-page,html.dark-page body,html.dark-page #app{
+  min-height:100%;
+  background:#0b1220!important;
+  color:#f8fafc!important;
+}
+html.dark-page body{
+  background:
+    radial-gradient(circle at 8% 0%,rgba(59,130,246,.18),transparent 26%),
+    radial-gradient(circle at 92% 0%,rgba(250,204,21,.09),transparent 24%),
+    linear-gradient(180deg,#0b1220 0%,#0f172a 100%)!important;
+}
+html.dark-page body:before{
+  background:
+    radial-gradient(circle at 22% 12%,rgba(59,130,246,.12),transparent 30%),
+    radial-gradient(circle at 85% 5%,rgba(250,204,21,.08),transparent 25%)!important;
+}
+html.dark-page .shell{
+  background:transparent!important;
+}
+html.dark-page .goal-card .danger{
+  background:#7f1d1d!important;
+  color:#fecaca!important;
+  border-color:rgba(248,113,113,.32)!important;
+}
+html.dark-page .goal-card footer button:not(.primary):not(.danger){
+  background:#e2e8f0!important;
+  color:#0f172a!important;
+}
