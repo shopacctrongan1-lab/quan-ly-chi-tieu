@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <main :class="['shell', { dark }]">
     <button v-if="user" class="theme-toggle" type="button" @click="toggleTheme">{{ dark ? '☀️' : '🌙' }}</button>
 
