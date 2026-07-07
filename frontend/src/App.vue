@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <main :class="['shell', { dark }]">
     <button v-if="user" class="theme-toggle" type="button" @click="toggleTheme">{{ dark ? '☀️' : '🌙' }}</button>
 
@@ -103,7 +103,7 @@
           <div class="section-head">
             <div>
               <p class="eyebrow">Nhập liệu</p>
-              <h2>{{ editingId ? 'Sửa giao dịch' : 'Thêm giao dịch mới' }}</h2>
+              <h2 class="gradient-title">{{ editingId ? 'Sửa giao dịch' : 'Thêm giao dịch mới' }}</h2>
               <p class="muted">Ghi nhanh một khoản thu nhập hoặc chi tiêu.</p>
             </div>
             <span class="soft-badge">{{ form.type === 'income' ? 'Thu nhập' : 'Chi tiêu' }}</span>
@@ -120,7 +120,7 @@
         <section class="card quick-history">
           <div class="section-head">
             <div>
-              <h2>Giao dịch gần đây</h2>
+              <h2 class="gradient-title">Giao dịch gần đây</h2>
               <p class="muted">Xem nhanh các khoản vừa ghi. Muốn lọc theo ngày hoặc xuất Excel thì sang mục Truy vấn.</p>
             </div>
             <button type="button" class="query-shortcut" @click="activeSection='transactionQuery'">🔎 Truy vấn</button>
@@ -208,7 +208,7 @@
         <article class="card goal-panel">
           <div class="section-head">
             <div>
-              <h2>Tiết kiệm theo mục tiêu</h2>
+              <h2 class="gradient-title">Tiết kiệm theo mục tiêu</h2>
               <p class="muted">Nhập thứ bạn muốn mua/làm, số tiền cần có và số tiền hiện có. Ứng dụng sẽ tính còn thiếu bao nhiêu và mỗi ngày nên để dành bao nhiêu.</p>
             </div>
           </div>
@@ -248,7 +248,7 @@
           <div v-else class="empty-state compact goal-empty"><b>Chưa có mục tiêu tiết kiệm</b><span>Hãy tạo một mục tiêu để biết mỗi ngày cần để dành bao nhiêu.</span></div>
         </article>
       </section>
-      <section v-show="activeSection === 'debts'" class="tools-grid"><article class="card"><h2>Nợ & cho vay</h2><form @submit.prevent="saveDebt"><select v-model="debt.kind"><option value="borrow">Tôi nợ</option><option value="lend">Người khác nợ tôi</option></select><input v-model="debt.person" placeholder="Tên người liên quan"/><label class="money-field"><span>Số tiền nợ / cho vay</span><input v-model="debt.amount" type="text" inputmode="numeric" placeholder="Nhập 1 → chọn 10k / 100k / 1tr" @blur="normalizeMoney(debt, 'amount')"/><div class="money-presets"><button v-for="x in moneySuggestions(debt.amount)" :key="x" type="button" @click="setMoney(debt, 'amount', x)">{{ shortMoney(x) }}</button></div></label><label class="date-field"><span>Ngày hẹn trả / thu nợ</span><input v-model="debt.dueDate" type="date"/></label><textarea v-model="debt.note" placeholder="Ghi chú"></textarea><button>Lưu khoản nợ</button></form><div v-for="d in debts" :key="d.id" class="debt-row">
+      <section v-show="activeSection === 'debts'" class="tools-grid"><article class="card"><h2 class="gradient-title">Nợ & cho vay</h2><form @submit.prevent="saveDebt"><select v-model="debt.kind"><option value="borrow">Tôi nợ</option><option value="lend">Người khác nợ tôi</option></select><input v-model="debt.person" placeholder="Tên người liên quan"/><label class="money-field"><span>Số tiền nợ / cho vay</span><input v-model="debt.amount" type="text" inputmode="numeric" placeholder="Nhập 1 → chọn 10k / 100k / 1tr" @blur="normalizeMoney(debt, 'amount')"/><div class="money-presets"><button v-for="x in moneySuggestions(debt.amount)" :key="x" type="button" @click="setMoney(debt, 'amount', x)">{{ shortMoney(x) }}</button></div></label><label class="date-field"><span>Ngày hẹn trả / thu nợ</span><input v-model="debt.dueDate" type="date"/></label><textarea v-model="debt.note" placeholder="Ghi chú"></textarea><button>Lưu khoản nợ</button></form><div v-for="d in debts" :key="d.id" class="debt-row">
   <div>
     <b>{{ d.kind === 'borrow' ? 'Tôi nợ' : 'Cho vay' }} - {{ d.person }}</b>
     <span>{{ displayMoney(d.amount) }} • hạn {{ d.dueDate || 'không có' }} • {{ d.status === 'done' ? 'Đã hoàn thành' : 'Đang theo dõi' }}</span>

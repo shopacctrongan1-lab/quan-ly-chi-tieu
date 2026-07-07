@@ -1322,3 +1322,19 @@ html.dark-page .goal-card footer button:not(.primary):not(.danger){
 /* Category title accent: make it match Query page title style */
 .title-accent{color:#2563eb!important}
 .dark .title-accent{color:#60a5fa!important}
+
+/* Shared gradient headings matching the query title */
+.gradient-title{
+  background:linear-gradient(120deg,#1d4ed8 0%,#4f46e5 38%,#7c3aed 68%,#a855f7 100%)!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  color:transparent!important;
+  filter:drop-shadow(0 2px 6px rgba(79,70,229,.28));
+}
+.dark .gradient-title{
+  background:linear-gradient(120deg,#60a5fa 0%,#818cf8 40%,#a78bfa 70%,#c084fc 100%)!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  color:transparent!important;
+  filter:drop-shadow(0 2px 10px rgba(129,140,248,.35));
+}
