@@ -619,15 +619,15 @@ input[type="checkbox"]:checked:after{content:"✓";position:absolute;left:10px;t
 }
 .query-title-block h2{
   margin:0!important;
-  color:#0f172a!important;
+  background:linear-gradient(135deg,#2563eb,#7c3aed);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent!important;
   font-size:30px!important;
   line-height:1.05;
   letter-spacing:-.045em;
 }
 .query-title-block h2 span{
-  background:none;
-  -webkit-background-clip:border-box;
-  background-clip:border-box;
   color:inherit;
 }
 .query-title-block p{
