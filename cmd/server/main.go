@@ -83,34 +83,51 @@ func (s *server) auth(next authedHandler) http.HandlerFunc {
 	}
 }
 func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		writeError(w, 405, "Phương thức không được hỗ trợ")
-		return
-	}
 	var in store.RegisterInput
-	if decode(w, r, &in) {
-		u, t, err := s.store.Register(in)
-		respondAuth(w, u, t, err)
-	}
-}
-func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		writeError(w, 405, "Phương thức không được hỗ trợ")
-		return
-	}
-	var in store.LoginInput
-	if decode(w, r, &in) {
-		u, t, err := s.store.Login(in)
-		status := http.StatusBadRequest
-		if errors.Is(err, store.ErrUnauthorized) {
-			status = http.StatusUnauthorized
+	switch r.Method {
+	case http.MethodGet:
+		in = store.RegisterInput{
+			Name:     strings.TrimSpace(r.Header.Get("X-Auth-Name")),
+			Email:    strings.TrimSpace(r.Header.Get("X-Auth-Email")),
+			Password: r.Header.Get("X-Auth-Password"),
 		}
-		if err != nil {
-			writeError(w, status, err.Error())
+	case http.MethodPost:
+		if !decode(w, r, &in) {
 			return
 		}
-		respondAuth(w, u, t, nil)
+	default:
+		writeError(w, 405, "Phương thức không được hỗ trợ")
+		return
 	}
+	u, t, err := s.store.Register(in)
+	respondAuth(w, u, t, err)
+}
+func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
+	var in store.LoginInput
+	switch r.Method {
+	case http.MethodGet:
+		in = store.LoginInput{
+			Email:    strings.TrimSpace(r.Header.Get("X-Auth-Email")),
+			Password: r.Header.Get("X-Auth-Password"),
+		}
+	case http.MethodPost:
+		if !decode(w, r, &in) {
+			return
+		}
+	default:
+		writeError(w, 405, "Phương thức không được hỗ trợ")
+		return
+	}
+	u, t, err := s.store.Login(in)
+	status := http.StatusBadRequest
+	if errors.Is(err, store.ErrUnauthorized) {
+		status = http.StatusUnauthorized
+	}
+	if err != nil {
+		writeError(w, status, err.Error())
+		return
+	}
+	respondAuth(w, u, t, nil)
 }
 func (s *server) handleLogout(w http.ResponseWriter, r *http.Request, u store.PublicUser) {
 	token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")

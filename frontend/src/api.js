@@ -32,8 +32,8 @@ const qs = (query = {}) => {
 }
 
 export const api = {
-  login: (payload) => request('/api/auth/login', { method: 'POST', body: JSON.stringify(payload) }),
-  register: (payload) => request('/api/auth/register', { method: 'POST', body: JSON.stringify(payload) }),
+  login: (payload) => request('/api/auth/login', { method: 'GET', headers: { 'X-Auth-Email': payload.email || '', 'X-Auth-Password': payload.password || '' } }),
+  register: (payload) => request('/api/auth/register', { method: 'GET', headers: { 'X-Auth-Name': payload.name || '', 'X-Auth-Email': payload.email || '', 'X-Auth-Password': payload.password || '' } }),
   logout: () => request('/api/auth/logout', { method: 'POST' }),
   me: () => request('/api/me'),
   expenses: (query) => request(`/api/expenses${qs(query)}`),
