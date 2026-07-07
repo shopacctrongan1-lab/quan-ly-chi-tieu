@@ -15,5 +15,6 @@ COPY frontend/dist ./frontend/dist
 RUN mkdir -p /data
 ENV DATA_FILE=/data/app.db
 ENV ADDR=:8080
+ENV TZ=Asia/Ho_Chi_Minh
 EXPOSE 8080
 CMD ["./server"]

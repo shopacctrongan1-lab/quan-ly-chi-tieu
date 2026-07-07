@@ -59,6 +59,9 @@ func main() {
 	})
 	mux.Handle("/", spaHandler(getenv("STATIC_DIR", "frontend/dist")))
 	addr := getenv("ADDR", ":8080")
+	if p := os.Getenv("PORT"); p != "" {
+		addr = ":" + p
+	}
 	go app.runTelegramReminderLoop()
 	log.Printf("Ứng dụng đang chạy tại http://localhost%s", addr)
 	for _, url := range lanURLs(addr) {
