@@ -111,8 +111,7 @@
           <input v-model.trim="form.title" placeholder="Tên khoản giao dịch" required />
           <div class="two"><label class="money-field"><span>Số tiền giao dịch</span><input v-model="form.amount" type="text" inputmode="numeric" placeholder="Nhập 1 → chọn 10k / 100k / 1tr" required @blur="normalizeMoney(form, 'amount')"/><div class="money-presets"><button v-for="x in moneySuggestions(form.amount)" :key="x" type="button" @click="setMoney(form, 'amount', x)">{{ shortMoney(x) }}</button></div></label><label class="date-field"><span>Ngày giao dịch</span><input v-model="form.date" type="date" required /></label></div>
           <select v-model="form.type"><option value="expense">Chi tiêu / Tiền ra</option><option value="income">Thu nhập / Tiền vào</option></select>
-          <input v-model.trim="form.category" list="categories" placeholder="Chọn danh mục giao dịch" required />
-          <datalist id="categories"><option v-for="c in categories" :key="c.id" :value="c.name" /></datalist>
+          <input v-model.trim="form.category" placeholder="Nhập danh mục giao dịch" required />
           <textarea v-model.trim="form.note" placeholder="Ghi chú"></textarea>
           <div class="actions"><button class="primary">{{ editingId ? 'Cập nhật giao dịch' : 'Lưu giao dịch' }}</button><button v-if="editingId" type="button" @click="resetForm">Hủy sửa</button></div><p v-if="error" class="error">{{ error }}</p>
         </form>
@@ -203,7 +202,6 @@
           </div>
         </section>
       </section>
-      <section v-show="activeSection === 'categories'" class="tools-grid"><article class="card"><h2><span class="title-accent">Danh</span> mục</h2><form @submit.prevent="saveCategory"><input v-model="newCategory.name" placeholder="Tên danh mục"/><button>Thêm</button></form><p v-for="c in categories" :key="c.id" class="chip"><span>{{ c.name }}</span><span class="chip-actions"><button type="button" class="danger" @click="removeCategory(c)">Xóa</button></span></p></article></section>
       <section v-show="activeSection === 'goals'" class="tools-grid goals-section">
         <article class="card goal-panel">
           <div class="section-head">
@@ -271,7 +269,6 @@ const tabs=[
   {id:'dashboard',icon:'📊',label:'Tổng quan'},
   {id:'transactions',icon:'💸',label:'Giao dịch'},
   {id:'transactionQuery',icon:'🔎',label:'Truy vấn'},
-  {id:'categories',icon:'🏷️',label:'Danh mục'},
   {id:'goals',icon:'🐷',label:'Tiết kiệm'},
   {id:'debts',icon:'🤝',label:'Nợ vay'},
   {id:'settings',icon:'⚙️',label:'Cài đặt'}
@@ -280,7 +277,6 @@ const sectionHelp={
   dashboard:{title:'Tổng quan tài chính',desc:'Xem nhanh sức khỏe tài chính trong tháng đang chọn.',tips:['Số dư ví là tổng tiền hiện có trong tất cả ví.','Biểu đồ danh mục cho biết tiền chi nhiều nhất ở đâu.','Bấm “Ẩn số dư” khi dùng app ở nơi đông người.']},
   transactions:{title:'Giao dịch thu / chi',desc:'Chỉ dùng để thêm hoặc sửa khoản thu chi hằng ngày.',tips:['Nhập tên khoản, số tiền, ngày giao dịch và chọn đúng ví.','Chọn danh mục để báo cáo và ngân sách tính chính xác.','Nếu cần xem lịch sử hoặc xuất Excel, hãy sang mục Truy vấn.']},
   transactionQuery:{title:'Truy vấn giao dịch',desc:'Xem lại lịch sử giao dịch theo ngày và xuất Excel.',tips:['Chọn Từ ngày và Đến ngày rồi bấm Truy vấn.','Có thể lọc tiền vào/tiền ra hoặc tìm theo từ khóa.','Danh sách được gom theo từng ngày giống app ngân hàng.']},
-  categories:{title:'Danh mục',desc:'Tạo nhóm thu chi như Ăn uống, Di chuyển, Lương, Đầu tư.',tips:['Danh mục giúp báo cáo rõ tiền đi vào đâu.','Đổi tên danh mục sẽ cập nhật lại giao dịch cũ cùng tên.']},
   wallets:{title:'Ví và tài khoản',desc:'Quản lý tiền trong 2 nơi chính: Ví tiền mặt và Ngân hàng.',tips:['Ứng dụng chỉ dùng 2 ví cố định: Ví tiền mặt và Ngân hàng.','Mỗi giao dịch cần chọn tiền đi từ Ví tiền mặt hay Ngân hàng.','Bạn có thể tự đặt mức tiền tối thiểu để cảnh báo số dư thấp.']},
   goals:{title:'Mục tiêu tiết kiệm',desc:'Theo dõi mục tiêu lớn như mua laptop, du lịch, quỹ khẩn cấp.',tips:['Nhập số tiền mục tiêu, số đã có và hạn hoàn thành.','Hệ thống tính số tiền cần tiết kiệm mỗi tháng.']},
   debts:{title:'Nợ và cho vay',desc:'Theo dõi bạn nợ ai hoặc ai đang nợ bạn.',tips:['“Tôi nợ” sẽ trừ tiền ví khi bấm Đã trả nợ.','“Người khác nợ tôi” sẽ cộng tiền ví khi bấm Đã thu nợ.','Luôn chọn đúng ví dùng để trả hoặc nhận tiền.']},
@@ -288,11 +284,11 @@ const sectionHelp={
 }
 const user=ref(null), authMode=ref('login'), activeSection=ref(localStorage.getItem('activeSection')||'dashboard'), chartPeriod=ref(localStorage.getItem('chartPeriod')||'month'), chartDate=ref(today), chartMonth=ref(currentMonth), chartYear=ref(new Date().getFullYear()), dark=ref(localStorage.getItem('dark')==='1'), hideMoney=ref(false), lowBalanceLimit=ref(Number(localStorage.getItem('lowBalanceLimit')||200000)), reminder=ref(localStorage.getItem('reminder')==='1'), error=ref(''), editingId=ref(null), mobileMenuOpen=ref(false)
 if(!tabs.some(t=>t.id===activeSection.value)) activeSection.value='dashboard'
-const expenses=ref([]), categories=ref([]), wallets=ref([]), goals=ref([]), debts=ref([])
+const expenses=ref([]), wallets=ref([]), goals=ref([]), debts=ref([])
 const summary=ref({income:0,expense:0,balance:0,byCategory:{},dailyIncome:{},dailyExpense:{}})
 const auth=reactive({name:'',email:'',password:''}), filters=reactive({month:'',search:'',type:'',from:'',to:'',costKind:''})
 const blank=()=>({title:'',amount:null,category:'',type:'expense',date:today,note:'',walletId:0,tags:[],costKind:'variable'}); const form=reactive(blank())
-const newCategory=reactive({name:'',type:'expense'}), newWallet=reactive({name:'',balance:null}), goal=reactive({name:'',targetAmount:null,currentAmount:null,deadline:''}), debt=reactive({kind:'borrow',person:'',amount:null,dueDate:'',note:'',walletId:0}), telegramReminder=reactive({enabled:false,time:'21:00',telegramChatId:''})
+const newWallet=reactive({name:'',balance:null}), goal=reactive({name:'',targetAmount:null,currentAmount:null,deadline:''}), debt=reactive({kind:'borrow',person:'',amount:null,dueDate:'',note:'',walletId:0}), telegramReminder=reactive({enabled:false,time:'21:00',telegramChatId:''})
 let timer=null
 function ymd(d){return d.toISOString().slice(0,10)}
 function dashboardQuery(){
@@ -338,7 +334,7 @@ const incomeBarWidth=computed(()=>Math.max(3, ((summary.value.income||0)/maxComp
 const expenseBarWidth=computed(()=>Math.max(3, ((summary.value.expense||0)/maxCompare.value)*100)+'%')
 async function submitAuth(){try{error.value=''; const res=authMode.value==='login'?await api.login(auth):await api.register(auth); setToken(res.token); user.value=res.user; await loadData()}catch(e){error.value=e.message}}
 async function logout(){await api.logout().catch(()=>{}); setToken(''); user.value=null}
-async function loadData(){try{const [ex,sm,cs,ws,gs,ds,rem]=await Promise.all([api.expenses(filters),api.summary(dashboardQuery()),api.categories(),api.wallets(),api.goals(),api.debts(),api.reminder()]); expenses.value=ex; summary.value=sm; categories.value=cs; wallets.value=ws; goals.value=gs; debts.value=ds; Object.assign(telegramReminder,{enabled:!!rem.enabled,time:rem.time||'21:00',telegramChatId:rem.telegramChatId||''}); if(!form.walletId&&coreWallets.value[0])form.walletId=coreWallets.value[0].id; if(!debt.walletId&&coreWallets.value[0])debt.walletId=coreWallets.value[0].id}catch(e){error.value=e.message}}
+async function loadData(){try{const [ex,sm,ws,gs,ds,rem]=await Promise.all([api.expenses(filters),api.summary(dashboardQuery()),api.wallets(),api.goals(),api.debts(),api.reminder()]); expenses.value=ex; summary.value=sm; wallets.value=ws; goals.value=gs; debts.value=ds; Object.assign(telegramReminder,{enabled:!!rem.enabled,time:rem.time||'21:00',telegramChatId:rem.telegramChatId||''}); if(!form.walletId&&coreWallets.value[0])form.walletId=coreWallets.value[0].id; if(!debt.walletId&&coreWallets.value[0])debt.walletId=coreWallets.value[0].id}catch(e){error.value=e.message}}
 function debouncedLoad(){clearTimeout(timer); timer=setTimeout(loadData,250)}
 function syncDarkClass(){document.documentElement.classList.toggle('dark-page', dark.value)}
 function toggleTheme(){dark.value=!dark.value; localStorage.setItem('dark', dark.value?'1':'0'); syncDarkClass()}
@@ -377,9 +373,6 @@ async function submitExpense(){try{normalizeMoney(form,'amount'); form.tags=[]; 
 function editItem(e){Object.assign(form,{...e,tags:[]}); editingId.value=e.id; scrollTo({top:0,behavior:'smooth'})}
 async function removeItem(id){if(confirm('Xóa giao dịch này?')){await api.deleteExpense(id); await loadData()}}
 function resetForm(){Object.assign(form,blank()); form.walletId=coreWallets.value[0]?.id||0; editingId.value=null}
-async function saveCategory(){await api.createCategory(newCategory); newCategory.name=''; await loadData()}
-async function renameCategory(c){const name=prompt('Tên danh mục mới',c.name); if(name){await api.updateCategory(c.id,{name,type:c.type}); await loadData()}}
-async function removeCategory(c){if(confirm(`Xóa danh mục "${c.name}"? Các giao dịch dùng danh mục này vẫn giữ nguyên tên.`)){await api.deleteCategory(c.id); await loadData()}}
 async function saveWallet(){await api.createWallet(newWallet); newWallet.name=''; newWallet.balance=null; await loadData()}
 function goalRemaining(g){return Math.max(0,(Number(g.targetAmount)||0)-(Number(g.currentAmount)||0))}
 function goalDaysLeft(g){
