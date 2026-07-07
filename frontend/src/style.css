@@ -1238,3 +1238,52 @@ button,.button{
   .quick-history-main>div{display:grid!important;gap:4px!important}
   .quick-history-actions button{flex:1!important}
 }
+
+/* ===== Goals: clearer, useful and readable in dark mode ===== */
+.goals-section{max-width:1100px;margin-inline:auto!important}
+.goal-panel .section-head{align-items:flex-start!important;margin-bottom:14px!important}
+.goal-panel .section-head .muted{max-width:820px!important;line-height:1.7!important}
+.goal-form{display:grid!important;grid-template-columns:1fr 1fr!important;gap:14px!important;margin-bottom:18px!important}
+.goal-form>input{grid-column:1/-1!important}
+.goal-form .date-field,.goal-form button.primary{grid-column:1/-1!important}
+.goal-list{display:grid!important;gap:16px!important;margin-top:18px!important}
+.goal-card{padding:18px!important;border-radius:22px!important;background:rgba(255,255,255,.78)!important;border:1px solid rgba(148,163,184,.22)!important;box-shadow:0 14px 34px rgba(15,23,42,.07)!important;color:#0f172a!important}
+.dark .goal-card{background:rgba(15,23,42,.62)!important;border-color:rgba(148,163,184,.24)!important;color:#f8fafc!important;box-shadow:0 18px 42px rgba(0,0,0,.22)!important}
+.goal-card header{display:flex!important;justify-content:space-between!important;gap:16px!important;align-items:flex-start!important;margin-bottom:12px!important}
+.goal-card header b{font-size:19px!important;color:inherit!important;display:block!important;margin-bottom:4px!important}
+.goal-card header span{display:block!important;color:#64748b!important;line-height:1.5!important;font-weight:750!important}
+.dark .goal-card header span{color:#cbd5e1!important}
+.goal-card header strong{font-size:24px!important;color:#2563eb!important;letter-spacing:-.04em!important}
+.dark .goal-card header strong{color:#facc15!important}
+.goal-track{height:12px!important;border-radius:999px!important;background:#e2e8f0!important;overflow:hidden!important;margin:10px 0 16px!important;border:1px solid rgba(148,163,184,.22)!important}
+.dark .goal-track{background:#0f172a!important;border-color:rgba(148,163,184,.25)!important}
+.goal-track i{display:block!important;height:100%!important;border-radius:999px!important;background:linear-gradient(90deg,#22c55e,#3b82f6)!important;min-width:0!important;transition:width .25s ease!important}
+.goal-card.done .goal-track i{background:linear-gradient(90deg,#facc15,#22c55e)!important}
+.goal-stats{display:grid!important;grid-template-columns:repeat(4,1fr)!important;gap:10px!important;margin:14px 0!important}
+.goal-stats div{padding:12px!important;border-radius:16px!important;background:#f8fafc!important;border:1px solid rgba(148,163,184,.16)!important;display:grid!important;gap:5px!important}
+.dark .goal-stats div{background:rgba(15,23,42,.76)!important;border-color:rgba(148,163,184,.20)!important}
+.goal-stats span{font-size:12px!important;color:#64748b!important;text-transform:uppercase!important;letter-spacing:.05em!important;font-weight:900!important}
+.dark .goal-stats span{color:#94a3b8!important}
+.goal-stats b{font-size:15px!important;color:#0f172a!important;word-break:break-word!important}
+.dark .goal-stats b{color:#f8fafc!important}
+.goal-card footer{display:flex!important;gap:8px!important;flex-wrap:wrap!important;margin-top:14px!important}
+.goal-card footer button{min-height:38px!important;padding:0 13px!important}
+.goal-empty{margin-top:16px!important;color:#0f172a!important;background:#f8fafc!important;border:1px dashed rgba(148,163,184,.45)!important}
+.dark .goal-empty{color:#f8fafc!important;background:rgba(15,23,42,.60)!important}
+
+/* Fix dark colors for recent transaction history */
+.dark .quick-history{background:rgba(30,41,59,.86)!important;color:#f8fafc!important}
+.dark .quick-history h2,.dark .quick-history-main b{color:#f8fafc!important}
+.dark .quick-history-main small,.dark .quick-history-main p{color:#cbd5e1!important}
+.dark .quick-history-row{background:rgba(15,23,42,.64)!important;border-color:rgba(148,163,184,.24)!important}
+.dark .quick-history-main strong.expense,.dark .quick-history-row.expense .quick-history-main strong{color:#fca5a5!important}
+.dark .quick-history-row.income .quick-history-main strong{color:#86efac!important}
+.dark .bank-transactions,.dark .bank-query{color:#f8fafc!important}
+.dark .bank-row{background:rgba(15,23,42,.60)!important;color:#f8fafc!important;border-color:rgba(148,163,184,.24)!important}
+.dark .bank-row-detail,.dark .bank-row p{color:#cbd5e1!important}
+
+@media(max-width:760px){
+  .goal-form{grid-template-columns:1fr!important}
+  .goal-stats{grid-template-columns:1fr 1fr!important}
+}
+@media(max-width:480px){.goal-stats{grid-template-columns:1fr!important}.goal-card footer button{flex:1!important}}

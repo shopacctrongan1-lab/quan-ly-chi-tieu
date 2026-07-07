@@ -204,7 +204,49 @@
         </section>
       </section>
       <section v-show="activeSection === 'categories'" class="tools-grid"><article class="card"><h2>Danh mục</h2><form @submit.prevent="saveCategory"><input v-model="newCategory.name" placeholder="Tên danh mục"/><button>Thêm</button></form><p v-for="c in categories" :key="c.id" class="chip"><span>{{ c.name }}</span><span class="chip-actions"><button type="button" class="danger" @click="removeCategory(c)">Xóa</button></span></p></article></section>
-      <section v-show="activeSection === 'goals'" class="tools-grid"><article class="card"><h2>Mục tiêu tiết kiệm</h2><form @submit.prevent="saveGoal"><input v-model="goal.name" placeholder="Mua laptop"/><label class="money-field"><span>Số tiền mục tiêu</span><input v-model="goal.targetAmount" type="text" inputmode="numeric" placeholder="VD: nhập 2 sẽ gợi ý 20k, 200k, 2tr" @blur="normalizeMoney(goal, 'targetAmount')"/><div class="money-presets"><button v-for="x in moneySuggestions(goal.targetAmount)" :key="x" type="button" @click="setMoney(goal, 'targetAmount', x)">{{ shortMoney(x) }}</button></div></label><label class="money-field"><span>Số tiền đã có</span><input v-model="goal.currentAmount" type="text" inputmode="numeric" placeholder="VD: 5tr" @blur="normalizeMoney(goal, 'currentAmount')"/><div class="money-presets"><button v-for="x in moneySuggestions(goal.currentAmount)" :key="x" type="button" @click="setMoney(goal, 'currentAmount', x)">{{ shortMoney(x) }}</button></div></label><label class="date-field"><span>Ngày hoàn thành mục tiêu</span><input v-model="goal.deadline" type="date"/></label><button>Lưu</button></form><div v-for="g in goals" :key="g.id" class="progress"><b>{{ g.name }}</b><span>Cần tiết kiệm/tháng: {{ displayMoney(g.monthlyNeed) }}</span><i class="ok" :style="{width: Math.min(100,g.percent)+'%'}"></i></div></article></section>
+      <section v-show="activeSection === 'goals'" class="tools-grid goals-section">
+        <article class="card goal-panel">
+          <div class="section-head">
+            <div>
+              <h2>Tiết kiệm theo mục tiêu</h2>
+              <p class="muted">Nhập thứ bạn muốn mua/làm, số tiền cần có và số tiền hiện có. Ứng dụng sẽ tính còn thiếu bao nhiêu và mỗi ngày nên để dành bao nhiêu.</p>
+            </div>
+          </div>
+          <form class="goal-form" @submit.prevent="saveGoal">
+            <input v-model="goal.name" placeholder="Tên mục tiêu, ví dụ: Mua laptop, đi du lịch, quỹ khẩn cấp"/>
+            <label class="money-field"><span>Cần tổng cộng bao nhiêu tiền?</span><input v-model="goal.targetAmount" type="text" inputmode="numeric" placeholder="VD: nhập 20tr hoặc chọn gợi ý" @blur="normalizeMoney(goal, 'targetAmount')"/><div class="money-presets"><button v-for="x in moneySuggestions(goal.targetAmount)" :key="x" type="button" @click="setMoney(goal, 'targetAmount', x)">{{ shortMoney(x) }}</button></div></label>
+            <label class="money-field"><span>Hiện tại đã có bao nhiêu?</span><input v-model="goal.currentAmount" type="text" inputmode="numeric" placeholder="VD: 5tr" @blur="normalizeMoney(goal, 'currentAmount')"/><div class="money-presets"><button v-for="x in moneySuggestions(goal.currentAmount)" :key="x" type="button" @click="setMoney(goal, 'currentAmount', x)">{{ shortMoney(x) }}</button></div></label>
+            <label class="date-field"><span>Muốn hoàn thành trước ngày nào?</span><input v-model="goal.deadline" type="date"/></label>
+            <button class="primary">{{ goal.name ? 'Lưu / cập nhật mục tiêu' : 'Tạo mục tiêu' }}</button>
+          </form>
+          <div v-if="goals.length" class="goal-list">
+            <article v-for="g in goals" :key="g.id" class="goal-card" :class="goalRemaining(g) <= 0 ? 'done' : ''">
+              <header>
+                <div>
+                  <b>{{ g.name }}</b>
+                  <span>{{ goalStatusText(g) }}</span>
+                </div>
+                <strong>{{ Math.round(g.percent || 0) }}%</strong>
+              </header>
+              <div class="goal-track"><i :style="{width: Math.min(100, Math.max(0, g.percent || 0)) + '%'}"></i></div>
+              <div class="goal-stats">
+                <div><span>Đã có</span><b>{{ displayMoney(g.currentAmount) }}</b></div>
+                <div><span>Còn thiếu</span><b>{{ displayMoney(goalRemaining(g)) }}</b></div>
+                <div><span>Cần/ngày</span><b>{{ displayMoney(goalDailyNeed(g)) }}</b></div>
+                <div><span>Cần/tháng</span><b>{{ displayMoney(g.monthlyNeed || 0) }}</b></div>
+              </div>
+              <footer>
+                <button type="button" @click="addGoalMoney(g, 100000)">+100k</button>
+                <button type="button" @click="addGoalMoney(g, 500000)">+500k</button>
+                <button type="button" @click="addGoalMoney(g, 1000000)">+1tr</button>
+                <button type="button" class="primary" @click="completeGoal(g)">Đã đạt</button>
+                <button type="button" @click="editGoal(g)">Sửa</button>
+              </footer>
+            </article>
+          </div>
+          <div v-else class="empty-state compact goal-empty"><b>Chưa có mục tiêu tiết kiệm</b><span>Hãy tạo một mục tiêu để biết mỗi ngày cần để dành bao nhiêu.</span></div>
+        </article>
+      </section>
       <section v-show="activeSection === 'debts'" class="tools-grid"><article class="card"><h2>Nợ & cho vay</h2><form @submit.prevent="saveDebt"><select v-model="debt.kind"><option value="borrow">Tôi nợ</option><option value="lend">Người khác nợ tôi</option></select><input v-model="debt.person" placeholder="Tên người liên quan"/><label class="money-field"><span>Số tiền nợ / cho vay</span><input v-model="debt.amount" type="text" inputmode="numeric" placeholder="Nhập 1 → chọn 10k / 100k / 1tr" @blur="normalizeMoney(debt, 'amount')"/><div class="money-presets"><button v-for="x in moneySuggestions(debt.amount)" :key="x" type="button" @click="setMoney(debt, 'amount', x)">{{ shortMoney(x) }}</button></div></label><label class="date-field"><span>Ngày hẹn trả / thu nợ</span><input v-model="debt.dueDate" type="date"/></label><textarea v-model="debt.note" placeholder="Ghi chú"></textarea><button>Lưu khoản nợ</button></form><div v-for="d in debts" :key="d.id" class="debt-row">
   <div>
     <b>{{ d.kind === 'borrow' ? 'Tôi nợ' : 'Cho vay' }} - {{ d.person }}</b>
@@ -337,7 +379,29 @@ async function saveCategory(){await api.createCategory(newCategory); newCategory
 async function renameCategory(c){const name=prompt('Tên danh mục mới',c.name); if(name){await api.updateCategory(c.id,{name,type:c.type}); await loadData()}}
 async function removeCategory(c){if(confirm(`Xóa danh mục "${c.name}"? Các giao dịch dùng danh mục này vẫn giữ nguyên tên.`)){await api.deleteCategory(c.id); await loadData()}}
 async function saveWallet(){await api.createWallet(newWallet); newWallet.name=''; newWallet.balance=null; await loadData()}
+function goalRemaining(g){return Math.max(0,(Number(g.targetAmount)||0)-(Number(g.currentAmount)||0))}
+function goalDaysLeft(g){
+  if(!g.deadline) return 0
+  const end=new Date(g.deadline+'T23:59:59')
+  const diff=Math.ceil((end-new Date())/86400000)
+  return Math.max(0,diff)
+}
+function goalDailyNeed(g){
+  const remain=goalRemaining(g), days=goalDaysLeft(g)
+  if(remain<=0) return 0
+  return days>0 ? remain/days : remain
+}
+function goalStatusText(g){
+  const remain=goalRemaining(g), days=goalDaysLeft(g)
+  if(remain<=0) return 'Đã đạt mục tiêu 🎉'
+  if(!g.deadline) return 'Còn thiếu '+money(remain)+' - chưa đặt hạn hoàn thành'
+  if(days<=0) return 'Đã tới hạn, còn thiếu '+money(remain)
+  return 'Còn '+days+' ngày, nên để dành '+money(goalDailyNeed(g))+'/ngày'
+}
 async function saveGoal(){normalizeMoney(goal,'targetAmount'); normalizeMoney(goal,'currentAmount'); await api.saveGoal(goal); Object.assign(goal,{name:'',targetAmount:null,currentAmount:null,deadline:''}); await loadData()}
+async function addGoalMoney(g,amount){await api.saveGoal({name:g.name,targetAmount:g.targetAmount,currentAmount:(Number(g.currentAmount)||0)+amount,deadline:g.deadline}); await loadData()}
+async function completeGoal(g){await api.saveGoal({name:g.name,targetAmount:g.targetAmount,currentAmount:g.targetAmount,deadline:g.deadline}); await loadData()}
+function editGoal(g){Object.assign(goal,{name:g.name,targetAmount:g.targetAmount,currentAmount:g.currentAmount,deadline:g.deadline||''}); scrollTo({top:0,behavior:'smooth'})}
 async function saveDebt(){normalizeMoney(debt,'amount'); debt.walletId=debt.walletId||coreWallets.value[0]?.id||0; await api.saveDebt(debt); Object.assign(debt,{kind:'borrow',person:'',amount:null,dueDate:'',note:'',walletId:coreWallets.value[0]?.id||0}); await loadData()}
 async function completeDebt(d){await api.completeDebt(d.id,d.walletId); await loadData()}
 async function removeDebt(d){

@@ -474,10 +474,19 @@ func enrichGoal(g SavingsGoal) SavingsGoal {
 		t, err := time.Parse("2006-01-02", g.Deadline)
 		if err == nil {
 			remaining := g.TargetAmount - g.CurrentAmount
-			now := time.Now()
-			months := (t.Year()-now.Year())*12 + int(t.Month()-now.Month())
-			if months > 0 && remaining > 0 {
-				g.MonthlyNeed = remaining / float64(months)
+			if remaining < 0 {
+				remaining = 0
+			}
+			days := time.Until(t.Add(23*time.Hour + 59*time.Minute + 59*time.Second)).Hours() / 24
+			if days < 1 {
+				days = 1
+			}
+			if remaining > 0 {
+				months := days / 30
+				if months < 1 {
+					months = 1
+				}
+				g.MonthlyNeed = remaining / months
 			}
 		}
 	}
