@@ -203,7 +203,7 @@
           </div>
         </section>
       </section>
-      <section v-show="activeSection === 'categories'" class="tools-grid"><article class="card"><h2>Danh mục</h2><form @submit.prevent="saveCategory"><input v-model="newCategory.name" placeholder="Tên danh mục"/><button>Thêm</button></form><p v-for="c in categories" :key="c.id" class="chip"><span>{{ c.name }}</span><span class="chip-actions"><button type="button" class="danger" @click="removeCategory(c)">Xóa</button></span></p></article></section>
+      <section v-show="activeSection === 'categories'" class="tools-grid"><article class="card"><h2><span class="title-accent">Danh</span> mục</h2><form @submit.prevent="saveCategory"><input v-model="newCategory.name" placeholder="Tên danh mục"/><button>Thêm</button></form><p v-for="c in categories" :key="c.id" class="chip"><span>{{ c.name }}</span><span class="chip-actions"><button type="button" class="danger" @click="removeCategory(c)">Xóa</button></span></p></article></section>
       <section v-show="activeSection === 'goals'" class="tools-grid goals-section">
         <article class="card goal-panel">
           <div class="section-head">

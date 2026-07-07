@@ -1317,3 +1317,7 @@ html.dark-page .goal-card footer button:not(.primary):not(.danger){
   background:#e2e8f0!important;
   color:#0f172a!important;
 }
+
+/* Category title accent: make it match Query page title style */
+.title-accent{color:#2563eb!important}
+.dark .title-accent{color:#60a5fa!important}
