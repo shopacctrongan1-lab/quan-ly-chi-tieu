@@ -1,6 +1,12 @@
 <template>
   <main :class="['shell', { dark }]">
     <button v-if="user" class="theme-toggle" type="button" @click="toggleTheme">{{ dark ? '☀️' : '🌙' }}</button>
+    <div class="toast-stack" aria-live="polite">
+      <div v-for="t in toasts" :key="t.id" class="toast" :class="t.type">
+        <b>{{ t.title }}</b>
+        <span>{{ t.message }}</span>
+      </div>
+    </div>
 
     <section v-if="!user" class="auth card">
       <h1>Quản lí chi tiêu</h1>
@@ -58,6 +64,15 @@
         <article class="stat card balance"><span>Cân đối</span><strong>{{ displayMoney(summary.balance) }}</strong></article>
       </section>
 
+      <section v-show="activeSection === 'dashboard'" class="insight-grid">
+        <article class="insight-card card" v-for="item in dashboardInsights" :key="item.title" :class="item.tone">
+          <span>{{ item.icon }}</span>
+          <div>
+            <b>{{ item.title }}</b>
+            <p>{{ item.text }}</p>
+          </div>
+        </article>
+      </section>
       <section v-show="activeSection === 'dashboard'" class="chart-controls card">
         <div>
           <h2>Khoảng thời gian báo cáo</h2>
@@ -233,6 +248,10 @@
                 <div><span>Cần/ngày</span><b>{{ displayMoney(goalDailyNeed(g)) }}</b></div>
                 <div><span>Cần/tháng</span><b>{{ displayMoney(g.monthlyNeed || 0) }}</b></div>
               </div>
+              <div v-if="goalHistory(g).length" class="goal-history">
+                <b>Lịch sử góp gần đây</b>
+                <span v-for="h in goalHistory(g).slice(0,3)" :key="h.time">+{{ displayMoney(h.amount) }} • {{ formatDate(h.date) }}</span>
+              </div>
               <footer>
                 <button type="button" @click="addGoalMoney(g, 100000)">+100k</button>
                 <button type="button" @click="addGoalMoney(g, 500000)">+500k</button>
@@ -282,7 +301,7 @@ const sectionHelp={
   debts:{title:'Nợ và cho vay',desc:'Theo dõi bạn nợ ai hoặc ai đang nợ bạn.',tips:['“Tôi nợ” sẽ trừ tiền ví khi bấm Đã trả nợ.','“Người khác nợ tôi” sẽ cộng tiền ví khi bấm Đã thu nợ.','Luôn chọn đúng ví dùng để trả hoặc nhận tiền.']},
   settings:{title:'Cài đặt & riêng tư',desc:'Nhập dữ liệu, bật nhắc nhở và quản lý quyền riêng tư.',tips:['Import CSV dùng để chuyển dữ liệu từ file cũ vào app.','Xóa tài khoản sẽ xóa toàn bộ dữ liệu và không thể hoàn tác.']}
 }
-const user=ref(null), authMode=ref('login'), activeSection=ref(localStorage.getItem('activeSection')||'dashboard'), chartPeriod=ref(localStorage.getItem('chartPeriod')||'month'), chartDate=ref(today), chartMonth=ref(currentMonth), chartYear=ref(new Date().getFullYear()), dark=ref(localStorage.getItem('dark')==='1'), hideMoney=ref(false), lowBalanceLimit=ref(Number(localStorage.getItem('lowBalanceLimit')||200000)), reminder=ref(localStorage.getItem('reminder')==='1'), error=ref(''), editingId=ref(null), mobileMenuOpen=ref(false)
+const user=ref(null), authMode=ref('login'), activeSection=ref(localStorage.getItem('activeSection')||'dashboard'), chartPeriod=ref(localStorage.getItem('chartPeriod')||'month'), chartDate=ref(today), chartMonth=ref(currentMonth), chartYear=ref(new Date().getFullYear()), dark=ref(localStorage.getItem('dark')==='1'), hideMoney=ref(false), lowBalanceLimit=ref(Number(localStorage.getItem('lowBalanceLimit')||200000)), reminder=ref(localStorage.getItem('reminder')==='1'), error=ref(''), editingId=ref(null), mobileMenuOpen=ref(false), toasts=ref([]), goalContribHistory=ref({})
 if(!tabs.some(t=>t.id===activeSection.value)) activeSection.value='dashboard'
 const expenses=ref([]), wallets=ref([]), goals=ref([]), debts=ref([])
 const summary=ref({income:0,expense:0,balance:0,byCategory:{},dailyIncome:{},dailyExpense:{}})
@@ -332,10 +351,46 @@ const hasTrendData=computed(()=>summary.value.income>0 || summary.value.expense>
 const maxCompare=computed(()=>Math.max(1, summary.value.income||0, summary.value.expense||0))
 const incomeBarWidth=computed(()=>Math.max(3, ((summary.value.income||0)/maxCompare.value)*100)+'%')
 const expenseBarWidth=computed(()=>Math.max(3, ((summary.value.expense||0)/maxCompare.value)*100)+'%')
-async function submitAuth(){try{error.value=''; const res=authMode.value==='login'?await api.login(auth):await api.register(auth); setToken(res.token); user.value=res.user; await loadData()}catch(e){error.value=e.message}}
+const topCategory=computed(()=>categoryRows.value.length?[...categoryRows.value].sort((a,b)=>b.value-a.value)[0]:null)
+const savingRate=computed(()=>summary.value.income>0?Math.round(((summary.value.income-summary.value.expense)/summary.value.income)*100):0)
+const dashboardInsights=computed(()=>{
+  const income=summary.value.income||0, expense=summary.value.expense||0, balance=summary.value.balance||0
+  const items=[]
+  if(income||expense){
+    const spendRate=income>0?Math.round(expense/income*100):0
+    items.push({icon:spendRate>80?'⚠️':'✅',title:'Tỷ lệ chi tiêu',text:income>0?`Bạn đã chi ${spendRate}% thu nhập trong kỳ này.`:'Kỳ này có chi tiêu nhưng chưa ghi nhận thu nhập.',tone:spendRate>80?'warn':'good'})
+    items.push({icon:balance>=0?'💰':'🔻',title:'Cân đối kỳ này',text:balance>=0?`Bạn còn dư ${money(balance)}.`:`Bạn đang âm ${money(Math.abs(balance))}, nên giảm chi không cần thiết.`,tone:balance>=0?'good':'bad'})
+  } else {
+    items.push({icon:'📝',title:'Chưa có dữ liệu',text:'Hãy thêm giao dịch để hệ thống đưa ra nhận xét rõ hơn.',tone:'info'})
+  }
+  if(topCategory.value) items.push({icon:'📌',title:'Chi nhiều nhất',text:`Mục ${topCategory.value.name} đang chi nhiều nhất: ${money(topCategory.value.value)}.`,tone:'info'})
+  if(lowWallets.value.length) items.push({icon:'🏦',title:'Ví sắp thấp',text:`Có ${lowWallets.value.length} ví dưới mức cảnh báo số dư.`,tone:'warn'})
+  else items.push({icon:'✨',title:'Số dư ổn định',text:`Tổng số dư hiện có là ${money(walletBalance.value)}.`,tone:'good'})
+  items.push({icon:savingRate.value>=20?'🐷':'🎯',title:'Khả năng tiết kiệm',text:income>0?`Tỷ lệ để dành hiện khoảng ${savingRate.value}%.`:'Ghi thêm thu nhập để xem tỷ lệ tiết kiệm.',tone:savingRate.value>=20?'good':'info'})
+  return items.slice(0,4)
+})
+async function submitAuth(){try{error.value=''; const res=authMode.value==='login'?await api.login(auth):await api.register(auth); setToken(res.token); user.value=res.user; loadGoalHistory(); await loadData(); success(authMode.value==='login'?'Đăng nhập thành công':'Đăng ký thành công')}catch(e){fail(e,'Không đăng nhập được')}}
 async function logout(){await api.logout().catch(()=>{}); setToken(''); user.value=null}
-async function loadData(){try{const [ex,sm,ws,gs,ds,rem]=await Promise.all([api.expenses(filters),api.summary(dashboardQuery()),api.wallets(),api.goals(),api.debts(),api.reminder()]); expenses.value=ex; summary.value=sm; wallets.value=ws; goals.value=gs; debts.value=ds; Object.assign(telegramReminder,{enabled:!!rem.enabled,time:rem.time||'21:00',telegramChatId:rem.telegramChatId||''}); if(!form.walletId&&coreWallets.value[0])form.walletId=coreWallets.value[0].id; if(!debt.walletId&&coreWallets.value[0])debt.walletId=coreWallets.value[0].id}catch(e){error.value=e.message}}
+async function loadData(){try{const [ex,sm,ws,gs,ds,rem]=await Promise.all([api.expenses(filters),api.summary(dashboardQuery()),api.wallets(),api.goals(),api.debts(),api.reminder()]); expenses.value=ex; summary.value=sm; wallets.value=ws; goals.value=gs; debts.value=ds; Object.assign(telegramReminder,{enabled:!!rem.enabled,time:rem.time||'21:00',telegramChatId:rem.telegramChatId||''}); if(!form.walletId&&coreWallets.value[0])form.walletId=coreWallets.value[0].id; if(!debt.walletId&&coreWallets.value[0])debt.walletId=coreWallets.value[0].id}catch(e){fail(e,'Không tải được dữ liệu')}}
 function debouncedLoad(){clearTimeout(timer); timer=setTimeout(loadData,250)}
+function toast(type,title,message){
+  const id=Date.now()+Math.random()
+  toasts.value.push({id,type,title,message})
+  setTimeout(()=>{toasts.value=toasts.value.filter(t=>t.id!==id)},3600)
+}
+function success(message,title='Thành công'){toast('success',title,message)}
+function fail(e,title='Có lỗi xảy ra'){const message=e?.message||String(e||'Vui lòng thử lại'); error.value=message; toast('error',title,message)}
+function info(message,title='Thông báo'){toast('info',title,message)}
+function goalHistoryKey(){return 'goalHistory:'+(user.value?.id||user.value?.email||'guest')}
+function loadGoalHistory(){try{goalContribHistory.value=JSON.parse(localStorage.getItem(goalHistoryKey())||'{}')}catch(_){goalContribHistory.value={}}}
+function saveGoalHistory(){localStorage.setItem(goalHistoryKey(),JSON.stringify(goalContribHistory.value))}
+function goalHistory(g){return goalContribHistory.value[String(g.id||g.name)]||[]}
+function rememberGoalContribution(g,amount){
+  const key=String(g.id||g.name)
+  const list=[{amount,date:today,time:new Date().toISOString()},...(goalContribHistory.value[key]||[])].slice(0,10)
+  goalContribHistory.value={...goalContribHistory.value,[key]:list}
+  saveGoalHistory()
+}
 function syncDarkClass(){document.documentElement.classList.toggle('dark-page', dark.value)}
 function toggleTheme(){dark.value=!dark.value; localStorage.setItem('dark', dark.value?'1':'0'); syncDarkClass()}
 function parseMoneyValue(v){
@@ -369,9 +424,9 @@ function shortMoney(v){
 }
 function normalizeLimit(){lowBalanceLimit.value=parseMoneyValue(lowBalanceLimit.value)||0; saveLowBalanceLimit()}
 function saveLowBalanceLimit(){localStorage.setItem('lowBalanceLimit', String(lowBalanceLimit.value||0))}
-async function submitExpense(){try{normalizeMoney(form,'amount'); form.tags=[]; editingId.value?await api.updateExpense(editingId.value,form):await api.createExpense(form); resetForm(); await loadData()}catch(e){error.value=e.message}}
+async function submitExpense(){try{normalizeMoney(form,'amount'); form.tags=[]; const editing=!!editingId.value; editing?await api.updateExpense(editingId.value,form):await api.createExpense(form); resetForm(); await loadData(); success(editing?'Đã cập nhật giao dịch':'Đã lưu giao dịch')}catch(e){fail(e,'Không lưu được giao dịch')}}
 function editItem(e){Object.assign(form,{...e,tags:[]}); editingId.value=e.id; scrollTo({top:0,behavior:'smooth'})}
-async function removeItem(id){if(confirm('Xóa giao dịch này?')){await api.deleteExpense(id); await loadData()}}
+async function removeItem(id){if(confirm('Xóa giao dịch này?')){try{await api.deleteExpense(id); await loadData(); success('Đã xóa giao dịch')}catch(e){fail(e,'Không xóa được giao dịch')}}}
 function resetForm(){Object.assign(form,blank()); form.walletId=coreWallets.value[0]?.id||0; editingId.value=null}
 async function saveWallet(){await api.createWallet(newWallet); newWallet.name=''; newWallet.balance=null; await loadData()}
 function goalRemaining(g){return Math.max(0,(Number(g.targetAmount)||0)-(Number(g.currentAmount)||0))}
@@ -393,20 +448,20 @@ function goalStatusText(g){
   if(days<=0) return 'Đã tới hạn, còn thiếu '+money(remain)
   return 'Còn '+days+' ngày, nên để dành '+money(goalDailyNeed(g))+'/ngày'
 }
-async function saveGoal(){normalizeMoney(goal,'targetAmount'); normalizeMoney(goal,'currentAmount'); await api.saveGoal(goal); Object.assign(goal,{name:'',targetAmount:null,currentAmount:null,deadline:''}); await loadData()}
-async function addGoalMoney(g,amount){await api.saveGoal({name:g.name,targetAmount:g.targetAmount,currentAmount:(Number(g.currentAmount)||0)+amount,deadline:g.deadline}); await loadData()}
-async function completeGoal(g){await api.saveGoal({name:g.name,targetAmount:g.targetAmount,currentAmount:g.targetAmount,deadline:g.deadline}); await loadData()}
+async function saveGoal(){try{normalizeMoney(goal,'targetAmount'); normalizeMoney(goal,'currentAmount'); await api.saveGoal(goal); Object.assign(goal,{name:'',targetAmount:null,currentAmount:null,deadline:''}); await loadData(); success('Đã lưu mục tiêu tiết kiệm')}catch(e){fail(e,'Không lưu được mục tiêu')}}
+async function addGoalMoney(g,amount){try{await api.saveGoal({name:g.name,targetAmount:g.targetAmount,currentAmount:(Number(g.currentAmount)||0)+amount,deadline:g.deadline}); rememberGoalContribution(g,amount); await loadData(); success('Đã ghi nhận góp thêm '+money(amount))}catch(e){fail(e,'Không góp thêm được')}}
+async function completeGoal(g){try{const add=Math.max(0,(Number(g.targetAmount)||0)-(Number(g.currentAmount)||0)); await api.saveGoal({name:g.name,targetAmount:g.targetAmount,currentAmount:g.targetAmount,deadline:g.deadline}); if(add>0) rememberGoalContribution(g,add); await loadData(); success('Chúc mừng, mục tiêu đã hoàn thành!')}catch(e){fail(e,'Không cập nhật được mục tiêu')}}
 function editGoal(g){Object.assign(goal,{name:g.name,targetAmount:g.targetAmount,currentAmount:g.currentAmount,deadline:g.deadline||''}); scrollTo({top:0,behavior:'smooth'})}
-async function removeGoal(g){if(confirm('Xóa mục tiêu "'+g.name+'"?')){await api.deleteGoal(g.id); await loadData()}}
-async function saveDebt(){normalizeMoney(debt,'amount'); debt.walletId=debt.walletId||coreWallets.value[0]?.id||0; await api.saveDebt(debt); Object.assign(debt,{kind:'borrow',person:'',amount:null,dueDate:'',note:'',walletId:coreWallets.value[0]?.id||0}); await loadData()}
-async function completeDebt(d){await api.completeDebt(d.id,d.walletId); await loadData()}
+async function removeGoal(g){if(confirm('Xóa mục tiêu "'+g.name+'"?')){try{await api.deleteGoal(g.id); await loadData(); success('Đã xóa mục tiêu tiết kiệm')}catch(e){fail(e,'Không xóa được mục tiêu')}}}
+async function saveDebt(){try{normalizeMoney(debt,'amount'); debt.walletId=debt.walletId||coreWallets.value[0]?.id||0; await api.saveDebt(debt); Object.assign(debt,{kind:'borrow',person:'',amount:null,dueDate:'',note:'',walletId:coreWallets.value[0]?.id||0}); await loadData(); success('Đã lưu khoản nợ/cho vay')}catch(e){fail(e,'Không lưu được khoản nợ')}}
+async function completeDebt(d){try{await api.completeDebt(d.id,d.walletId); await loadData(); success(d.kind==='borrow'?'Đã ghi nhận trả nợ':'Đã ghi nhận thu nợ')}catch(e){fail(e,'Không cập nhật được khoản nợ')}}
 async function removeDebt(d){
   const note=d.status==='done'?'\nKhoản này đã hoàn thành nên khi xóa hệ thống sẽ hoàn tác lại số dư ví liên quan.':''
-  if(confirm(`Xóa khoản nợ/cho vay của ${d.person}?${note}`)){await api.deleteDebt(d.id); await loadData()}
+  if(confirm(`Xóa khoản nợ/cho vay của ${d.person}?${note}`)){try{await api.deleteDebt(d.id); await loadData(); success('Đã xóa khoản nợ/cho vay')}catch(e){fail(e,'Không xóa được khoản nợ')}}
 }
-async function importCsv(e){const file=e.target.files?.[0]; if(file){const r=await api.importCsv(file); alert(`Đã import ${r.imported} giao dịch`); await loadData()}}
-async function saveTelegramReminder(){await api.saveReminder(telegramReminder); alert('Đã lưu nhắc nhở Telegram')}
-async function testTelegramReminder(){try{await api.saveReminder(telegramReminder); await api.testReminder(); alert('Đã gửi tin nhắn test. Kiểm tra Telegram nhé!')}catch(e){alert(e.message)}}
+async function importCsv(e){const file=e.target.files?.[0]; if(file){try{const r=await api.importCsv(file); await loadData(); success(`Đã import ${r.imported} giao dịch`)}catch(err){fail(err,'Không import được CSV')}}}
+async function saveTelegramReminder(){try{await api.saveReminder(telegramReminder); success('Đã lưu nhắc nhở Telegram')}catch(e){fail(e,'Không lưu được nhắc nhở')}}
+async function testTelegramReminder(){try{await api.saveReminder(telegramReminder); await api.testReminder(); success('Đã gửi tin nhắn test. Kiểm tra Telegram nhé!')}catch(e){fail(e,'Không gửi được tin test')}}
 async function deleteAccount(){if(confirm('Xóa vĩnh viễn tài khoản và toàn bộ dữ liệu?')){await api.deleteAccount(); setToken(''); user.value=null}}
 function displayMoney(v){return hideMoney.value?'******':money(v)}
 function money(v){return new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'}).format(v||0)}
@@ -414,5 +469,5 @@ function plainMoney(v){return new Intl.NumberFormat('vi-VN').format(v||0)}
 function formatDate(v){return new Intl.DateTimeFormat('vi-VN').format(new Date(v))}
 function formatTime(v){const d=v?new Date(v):new Date(); return d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}
 function walletName(id){return wallets.value.find(w=>w.id===id)?.name || 'Ví'}
-onMounted(async()=>{syncDarkClass(); try{const me=await api.me(); user.value=me; await loadData()}catch(_){}})
+onMounted(async()=>{syncDarkClass(); try{const me=await api.me(); user.value=me; loadGoalHistory(); await loadData()}catch(_){}})
 </script>
