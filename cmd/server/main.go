@@ -125,7 +125,6 @@ func respondAuth(w http.ResponseWriter, u store.PublicUser, token string, err er
 		writeError(w, 400, err.Error())
 		return
 	}
-	http.SetCookie(w, &http.Cookie{Name: "token", Value: token, Path: "/", HttpOnly: true, SameSite: http.SameSiteLaxMode})
 	writeJSON(w, 200, map[string]any{"user": u, "token": token})
 }
 
