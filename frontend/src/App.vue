@@ -24,9 +24,6 @@
           <h1>Dashboard tài chính</h1>
           <p class="muted">Quản lý thu chi, ví, nợ vay và mục tiêu trong từng khu vực riêng.</p>
         </div>
-        <div class="top-actions">
-          <button class="hero-logout" @click="logout">Đăng xuất</button>
-        </div>
       </section>
 
       <button class="mobile-menu-toggle" type="button" @click="mobileMenuOpen = true">
