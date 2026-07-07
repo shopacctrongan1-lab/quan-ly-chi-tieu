@@ -265,16 +265,63 @@
           <div v-else class="empty-state compact goal-empty"><b>Chưa có mục tiêu tiết kiệm</b><span>Hãy tạo một mục tiêu để biết mỗi ngày cần để dành bao nhiêu.</span></div>
         </article>
       </section>
-      <section v-show="activeSection === 'debts'" class="tools-grid"><article class="card"><h2 class="gradient-title">Nợ & cho vay</h2><form @submit.prevent="saveDebt"><select v-model="debt.kind"><option value="borrow">Tôi nợ</option><option value="lend">Người khác nợ tôi</option></select><input v-model="debt.person" placeholder="Tên người liên quan"/><label class="money-field"><span>Số tiền nợ / cho vay</span><input v-model="debt.amount" type="text" inputmode="numeric" placeholder="Nhập 1 → chọn 10k / 100k / 1tr" @blur="normalizeMoney(debt, 'amount')"/><div class="money-presets"><button v-for="x in moneySuggestions(debt.amount)" :key="x" type="button" @click="setMoney(debt, 'amount', x)">{{ shortMoney(x) }}</button></div></label><label class="date-field"><span>Ngày hẹn trả / thu nợ</span><input v-model="debt.dueDate" type="date"/></label><textarea v-model="debt.note" placeholder="Ghi chú"></textarea><button>Lưu khoản nợ</button></form><div v-for="d in debts" :key="d.id" class="debt-row">
-  <div>
-    <b>{{ d.kind === 'borrow' ? 'Tôi nợ' : 'Cho vay' }} - {{ d.person }}</b>
-    <span>{{ displayMoney(d.amount) }} • hạn {{ d.dueDate || 'không có' }} • {{ d.status === 'done' ? 'Đã hoàn thành' : 'Đang theo dõi' }}</span>
-  </div>
-  <div class="debt-actions">
-    <button v-if="d.status !== 'done'" type="button" class="primary" @click="completeDebt(d)">{{ d.kind === 'borrow' ? 'Đã trả nợ' : 'Đã thu nợ' }}</button>
-    <button type="button" class="danger" @click="removeDebt(d)">Xóa</button>
-  </div>
-</div></article></section>
+      <section v-show="activeSection === 'debts'" class="debt-workspace">
+        <article class="card debt-form-card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Ghi nhận</p>
+              <h2 class="gradient-title">Nợ & cho vay</h2>
+              <p class="muted">Theo dõi khoản bạn nợ ai hoặc ai đang nợ bạn.</p>
+            </div>
+            <span class="soft-badge">{{ debt.kind === 'borrow' ? 'Tôi nợ' : 'Cho vay' }}</span>
+          </div>
+          <form @submit.prevent="saveDebt">
+            <select v-model="debt.kind">
+              <option value="borrow">Tôi nợ</option>
+              <option value="lend">Người khác nợ tôi</option>
+            </select>
+            <input v-model="debt.person" placeholder="Tên người liên quan" required />
+            <label class="money-field">
+              <span>Số tiền nợ / cho vay</span>
+              <input v-model="debt.amount" type="text" inputmode="numeric" placeholder="Nhập 1 → chọn 10k / 100k / 1tr" @blur="normalizeMoney(debt, 'amount')" required />
+              <div class="money-presets">
+                <button v-for="x in moneySuggestions(debt.amount)" :key="x" type="button" @click="setMoney(debt, 'amount', x)">{{ shortMoney(x) }}</button>
+              </div>
+            </label>
+            <label class="date-field">
+              <span>Ngày hẹn trả / thu nợ</span>
+              <input v-model="debt.dueDate" type="date" />
+            </label>
+            <textarea v-model="debt.note" placeholder="Ghi chú (tùy chọn)"></textarea>
+            <button class="primary">Lưu khoản nợ</button>
+          </form>
+        </article>
+
+        <article class="card debt-list-card">
+          <h2 class="gradient-title">Danh sách nợ</h2>
+          <div v-if="debts.length" class="debt-list">
+            <div v-for="d in debts" :key="d.id" class="debt-row" :class="[d.kind, d.status === 'done' ? 'done' : '']">
+              <div class="debt-row-icon">{{ d.kind === 'borrow' ? '↑' : '↓' }}</div>
+              <div class="debt-row-main">
+                <div class="debt-row-top">
+                  <b>{{ d.kind === 'borrow' ? 'Tôi nợ' : 'Cho vay' }} — {{ d.person }}</b>
+                  <strong :class="d.kind === 'borrow' ? 'expense' : 'income'">{{ displayMoney(d.amount) }}</strong>
+                </div>
+                <small>Hạn: {{ d.dueDate ? formatDate(d.dueDate) : 'không có' }} • <span :class="d.status === 'done' ? 'income' : 'muted'">{{ d.status === 'done' ? 'Đã hoàn thành' : 'Đang theo dõi' }}</span></small>
+                <p v-if="d.note" class="muted">{{ d.note }}</p>
+              </div>
+              <div class="debt-actions">
+                <button v-if="d.status !== 'done'" type="button" class="primary" @click="completeDebt(d)">{{ d.kind === 'borrow' ? 'Đã trả' : 'Đã thu' }}</button>
+                <button type="button" class="danger" @click="removeDebt(d)">Xóa</button>
+              </div>
+            </div>
+          </div>
+          <div v-else class="empty-state compact">
+            <b>Chưa có khoản nợ nào</b>
+            <span>Lưu khoản nợ hoặc cho vay bên trái để theo dõi ở đây.</span>
+          </div>
+        </article>
+      </section>
       <section v-show="activeSection === 'settings'" class="tools-grid"><article class="card"><h2>Nhắc nhở Telegram</h2><p class="muted">Chọn giờ nhắc mỗi ngày để bot Telegram nhắn bạn ghi lại chi tiêu.</p><form @submit.prevent="saveTelegramReminder"><label class="toggle-row"><input v-model="telegramReminder.enabled" type="checkbox" /><span>Bật nhắc nhở hằng ngày</span></label><label class="date-field"><span>Giờ nhắc mỗi ngày</span><input v-model="telegramReminder.time" type="time" /></label><input v-model.trim="telegramReminder.telegramChatId" placeholder="Nhập Chat ID, ví dụ: 5687993964"/><div class="actions"><button>Lưu nhắc nhở Telegram</button><button type="button" class="primary" @click="testTelegramReminder">Gửi thử bot</button></div></form><div class="guide-mini"><b>Cách lấy Chat ID:</b><ol><li>Tạo bot bằng @BotFather và cấu hình TELEGRAM_BOT_TOKEN trên server.</li><li>Nhắn /start cho bot của bạn.</li><li>Nhập Chat ID của bạn, không nhập @username của bot.</li><li>Bấm “Gửi thử bot” để kiểm tra ngay.</li></ol></div></article><article class="card"><h2>Cài đặt & riêng tư</h2><p class="muted">Import CSV mẫu: Ngày, Loại, Danh mục, Tên khoản, Số tiền, Ghi chú, Loại chi phí.</p><input type="file" accept=".csv" @change="importCsv"/><button class="danger" @click="deleteAccount">Xóa tài khoản và toàn bộ dữ liệu</button></article></section>
     </template>
   </main>
