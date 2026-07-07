@@ -14,7 +14,6 @@
       <button class="link" @click="authMode = authMode === 'login' ? 'register' : 'login'">
         {{ authMode === 'login' ? 'Chưa có tài khoản? Đăng ký' : 'Đã có tài khoản? Đăng nhập' }}
       </button>
-      <p class="hint">Demo: demo@example.com / demo123456</p>
       <p v-if="error" class="error">{{ error }}</p>
     </section>
 
@@ -68,13 +67,14 @@
           <p class="muted">Chọn ngày, tuần, tháng hoặc năm để 2 biểu đồ bên dưới tính đúng theo nhu cầu.</p>
         </div>
         <div class="chart-filter-row">
-          <select v-model="chartPeriod" @change="saveChartPeriod(); loadData()">
+          <select v-model="chartPeriod" @change="saveChartPeriod">
             <option value="day">Theo ngày</option>
             <option value="week">Theo tuần</option>
             <option value="month">Theo tháng</option>
             <option value="year">Theo năm</option>
           </select>
-          <label class="date-field"><span>{{ chartPeriod === 'day' ? 'Chọn ngày' : chartPeriod === 'week' ? 'Chọn ngày trong tuần' : chartPeriod === 'month' ? 'Chọn tháng' : 'Chọn năm' }}</span><input v-if="chartPeriod === 'month'" v-model="chartMonth" type="month" @change="syncChartDateFromMonth"/><input v-else-if="chartPeriod === 'year'" v-model="chartYear" type="number" min="2000" max="2100" @change="syncChartDateFromYear"/><input v-else v-model="chartDate" type="date" @change="loadData"/></label>
+          <label class="date-field"><span>{{ chartPeriod === 'day' ? 'Chọn ngày' : chartPeriod === 'week' ? 'Chọn ngày trong tuần' : chartPeriod === 'month' ? 'Chọn tháng' : 'Chọn năm' }}</span><input v-if="chartPeriod === 'month'" v-model="chartMonth" type="month" @change="syncChartDateFromMonth"/><input v-else-if="chartPeriod === 'year'" v-model="chartYear" type="number" min="2000" max="2100" @change="syncChartDateFromYear"/><input v-else v-model="chartDate" type="date"/></label>
+          <button type="button" class="primary" @click="applyDashboardFilter">Lọc báo cáo</button>
         </div>
       </section>
 
@@ -258,7 +258,7 @@ const user=ref(null), authMode=ref('login'), activeSection=ref(localStorage.getI
 if(!tabs.some(t=>t.id===activeSection.value)) activeSection.value='dashboard'
 const expenses=ref([]), categories=ref([]), wallets=ref([]), budgets=ref([]), goals=ref([]), debts=ref([])
 const summary=ref({income:0,expense:0,balance:0,byCategory:{},dailyIncome:{},dailyExpense:{}})
-const auth=reactive({name:'',email:'demo@example.com',password:'demo123456'}), filters=reactive({month:'',search:'',type:'',from:'',to:'',costKind:''})
+const auth=reactive({name:'',email:'',password:''}), filters=reactive({month:'',search:'',type:'',from:'',to:'',costKind:''})
 const blank=()=>({title:'',amount:null,category:'',type:'expense',date:today,note:'',walletId:0,tags:[],costKind:'variable'}); const form=reactive(blank())
 const newCategory=reactive({name:'',type:'expense'}), newWallet=reactive({name:'',balance:null}), budget=reactive({category:'',month:currentMonth,limit:null}), goal=reactive({name:'',targetAmount:null,currentAmount:null,deadline:''}), debt=reactive({kind:'borrow',person:'',amount:null,dueDate:'',note:'',walletId:0}), telegramReminder=reactive({enabled:false,time:'21:00',telegramChatId:''})
 let timer=null
@@ -281,8 +281,9 @@ function dashboardQuery(){
   return q
 }
 function saveChartPeriod(){localStorage.setItem('chartPeriod', chartPeriod.value)}
-function syncChartDateFromMonth(){chartDate.value=(chartMonth.value||currentMonth)+'-01'; loadData()}
-function syncChartDateFromYear(){chartDate.value=(chartYear.value||new Date().getFullYear())+'-01-01'; loadData()}
+function syncChartDateFromMonth(){chartDate.value=(chartMonth.value||currentMonth)+'-01'}
+function syncChartDateFromYear(){chartDate.value=(chartYear.value||new Date().getFullYear())+'-01-01'}
+function applyDashboardFilter(){saveChartPeriod(); loadData()}
 const coreWallets=computed(()=>wallets.value.filter(w=>['Ví tiền mặt','Ngân hàng'].includes(w.name)))
 const walletBalance=computed(()=>coreWallets.value.reduce((s,w)=>s+w.balance,0)), lowWallets=computed(()=>coreWallets.value.filter(w=>w.balance < lowBalanceLimit.value)), exportHref=computed(()=>api.exportUrl(filters))
 const colors=['#2563eb','#ef4444','#16a34a','#f59e0b','#8b5cf6','#06b6d4','#ec4899']
