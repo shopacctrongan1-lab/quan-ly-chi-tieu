@@ -1735,8 +1735,9 @@ input[type="checkbox"]:checked:after{content:""!important;left:auto!important;to
   background:transparent;
 }
 .notif-panel{
-  position:absolute;right:0;top:calc(100% + 10px);
-  width:min(360px,88vw);
+  position:fixed;
+  top:100px;right:clamp(10px,2vw,32px);
+  width:min(360px,calc(100vw - 20px));
   z-index:200;
   border-radius:22px;
   background:rgba(255,255,255,.96);
@@ -1800,10 +1801,5 @@ input[type="checkbox"]:checked:after{content:""!important;left:auto!important;to
   gap:18px !important;
 }
 @media(max-width:760px){
-  .notif-panel{
-    position:fixed;
-    top:72px;right:10px;left:10px;
-    width:auto;
-  }
   .notif-bell{width:42px;height:42px;font-size:20px}
 }

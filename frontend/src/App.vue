@@ -35,22 +35,24 @@
             🔔
             <span v-if="unreadCount > 0" class="notif-badge">{{ unreadCount }}</span>
           </button>
-          <div v-if="notifOpen" class="notif-panel" role="dialog" aria-label="Danh sách thông báo">
-            <header class="notif-head">Thông báo</header>
-            <div class="notif-list">
-              <button v-for="n in notifications" :key="n.id" class="notif-item" type="button" @click="gotoNotif(n)">
-                <span class="notif-icon">{{ n.icon }}</span>
-                <div class="notif-body">
-                  <b>{{ n.title }}</b>
-                  <p>{{ n.text }}</p>
-                </div>
-              </button>
-              <div v-if="notifications.length === 0" class="notif-empty">Không có thông báo mới 🎉</div>
-            </div>
+        </div>
+      </section>
+      <teleport to="body">
+        <div v-if="notifOpen" class="notif-backdrop" @click="notifOpen = false"></div>
+        <div v-if="notifOpen" class="notif-panel" role="dialog" aria-label="Danh sách thông báo">
+          <header class="notif-head">Thông báo</header>
+          <div class="notif-list">
+            <button v-for="n in notifications" :key="n.id" class="notif-item" type="button" @click="gotoNotif(n)">
+              <span class="notif-icon">{{ n.icon }}</span>
+              <div class="notif-body">
+                <b>{{ n.title }}</b>
+                <p>{{ n.text }}</p>
+              </div>
+            </button>
+            <div v-if="notifications.length === 0" class="notif-empty">Không có thông báo mới 🎉</div>
           </div>
         </div>
-        <div v-if="notifOpen" class="notif-backdrop" @click="notifOpen = false"></div>
-      </section>
+      </teleport>
 
       <button class="mobile-menu-toggle" type="button" @click="mobileMenuOpen = true">
         <span>☰</span>
