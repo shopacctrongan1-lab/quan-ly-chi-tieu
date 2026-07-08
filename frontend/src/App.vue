@@ -30,6 +30,26 @@
           <h1>Dashboard tài chính</h1>
           <p class="muted">Quản lý thu chi, ví, nợ vay và mục tiêu trong từng khu vực riêng.</p>
         </div>
+        <div class="notif-wrap">
+          <button class="notif-bell" type="button" @click="toggleNotif" :aria-label="'Thông báo' + (unreadCount ? ' (' + unreadCount + ' chưa đọc)' : '')">
+            🔔
+            <span v-if="unreadCount > 0" class="notif-badge">{{ unreadCount }}</span>
+          </button>
+          <div v-if="notifOpen" class="notif-panel" role="dialog" aria-label="Danh sách thông báo">
+            <header class="notif-head">Thông báo</header>
+            <div class="notif-list">
+              <button v-for="n in notifications" :key="n.id" class="notif-item" type="button" @click="gotoNotif(n)">
+                <span class="notif-icon">{{ n.icon }}</span>
+                <div class="notif-body">
+                  <b>{{ n.title }}</b>
+                  <p>{{ n.text }}</p>
+                </div>
+              </button>
+              <div v-if="notifications.length === 0" class="notif-empty">Không có thông báo mới 🎉</div>
+            </div>
+          </div>
+        </div>
+        <div v-if="notifOpen" class="notif-backdrop" @click="notifOpen = false"></div>
       </section>
 
       <button class="mobile-menu-toggle" type="button" @click="mobileMenuOpen = true">
@@ -348,7 +368,7 @@ const sectionHelp={
   debts:{title:'Nợ và cho vay',desc:'Theo dõi bạn nợ ai hoặc ai đang nợ bạn.',tips:['“Tôi nợ” sẽ trừ tiền ví khi bấm Đã trả nợ.','“Người khác nợ tôi” sẽ cộng tiền ví khi bấm Đã thu nợ.','Luôn chọn đúng ví dùng để trả hoặc nhận tiền.']},
   settings:{title:'Cài đặt & riêng tư',desc:'Nhập dữ liệu, bật nhắc nhở và quản lý quyền riêng tư.',tips:['Import CSV dùng để chuyển dữ liệu từ file cũ vào app.','Xóa tài khoản sẽ xóa toàn bộ dữ liệu và không thể hoàn tác.']}
 }
-const user=ref(null), authMode=ref('login'), activeSection=ref(localStorage.getItem('activeSection')||'dashboard'), chartPeriod=ref(localStorage.getItem('chartPeriod')||'month'), chartDate=ref(today), chartMonth=ref(currentMonth), chartYear=ref(new Date().getFullYear()), dark=ref(localStorage.getItem('dark')==='1'), hideMoney=ref(false), lowBalanceLimit=ref(Number(localStorage.getItem('lowBalanceLimit')||200000)), error=ref(''), editingId=ref(null), mobileMenuOpen=ref(false), toasts=ref([]), goalContribHistory=ref({})
+const user=ref(null), authMode=ref('login'), activeSection=ref(localStorage.getItem('activeSection')||'dashboard'), chartPeriod=ref('month'), chartDate=ref(today), chartMonth=ref(currentMonth), chartYear=ref(new Date().getFullYear()), dark=ref(localStorage.getItem('dark')==='1'), hideMoney=ref(false), lowBalanceLimit=ref(Number(localStorage.getItem('lowBalanceLimit')||200000)), error=ref(''), editingId=ref(null), mobileMenuOpen=ref(false), toasts=ref([]), goalContribHistory=ref({}), dashboardFilterApplied=ref(false), notifOpen=ref(false), notifRead=ref([])
 if(!tabs.some(t=>t.id===activeSection.value)) activeSection.value='dashboard'
 watch(activeSection, v=>localStorage.setItem('activeSection', v))
 const expenses=ref([]), wallets=ref([]), goals=ref([]), debts=ref([])
@@ -375,12 +395,18 @@ function dashboardQuery(){
   }
   return q
 }
-function saveChartPeriod(){localStorage.setItem('chartPeriod', chartPeriod.value)}
+function saveChartPeriod(){}
 function syncChartDateFromMonth(){chartDate.value=(chartMonth.value||currentMonth)+'-01'}
 function syncChartDateFromYear(){chartDate.value=(chartYear.value||new Date().getFullYear())+'-01-01'}
-function applyDashboardFilter(){saveChartPeriod(); loadData()}
-const coreWallets=computed(()=>wallets.value.filter(w=>['Ví tiền mặt','Ngân hàng'].includes(w.name)))
-const walletBalance=computed(()=>coreWallets.value.reduce((s,w)=>s+w.balance,0)), lowWallets=computed(()=>coreWallets.value.filter(w=>w.balance < lowBalanceLimit.value)), exportHref=computed(()=>api.exportUrl(filters))
+function applyDashboardFilter(){dashboardFilterApplied.value=true; loadData()}
+const coreWallets=computed(()=>wallets.value.filter(w=>Number.isFinite(Number(w.balance))))
+const storedWalletBalance=computed(()=>coreWallets.value.reduce((s,w)=>s+(Number(w.balance)||0),0))
+const walletBalance=computed(()=>{
+  const stored=storedWalletBalance.value
+  const sm=summary.value||{}
+  const hasTransactions=(Number(sm.income)||0)>0 || (Number(sm.expense)||0)>0
+  return stored!==0 || !hasTransactions ? stored : (Number(sm.balance)||0)
+}), lowWallets=computed(()=>coreWallets.value.filter(w=>(Number(w.balance)||0) < lowBalanceLimit.value)), exportHref=computed(()=>api.exportUrl(filters))
 const colors=['#2563eb','#ef4444','#16a34a','#f59e0b','#8b5cf6','#06b6d4','#ec4899']
 const categoryRows=computed(()=>Object.entries(summary.value.byCategory||{}).map(([name,value],i)=>({name,value,color:colors[i%colors.length]})))
 const pieStyle=computed(()=>{let total=categoryRows.value.reduce((s,r)=>s+r.value,0), acc=0; if(!total)return {}; const parts=categoryRows.value.map(r=>{const a=acc/total*100; acc+=r.value; return `${r.color} ${a}% ${acc/total*100}%`}); return {background:`conic-gradient(${parts.join(',')})`}})
@@ -412,14 +438,44 @@ const dashboardInsights=computed(()=>{
     items.push({icon:'📝',title:'Chưa có dữ liệu',text:'Hãy thêm giao dịch để hệ thống đưa ra nhận xét rõ hơn.',tone:'info'})
   }
   if(topCategory.value) items.push({icon:'📌',title:'Chi nhiều nhất',text:`Mục ${topCategory.value.name} đang chi nhiều nhất: ${money(topCategory.value.value)}.`,tone:'info'})
-  if(lowWallets.value.length) items.push({icon:'🏦',title:'Ví sắp thấp',text:`Có ${lowWallets.value.length} ví dưới mức cảnh báo số dư.`,tone:'warn'})
-  else items.push({icon:'✨',title:'Số dư ổn định',text:`Tổng số dư hiện có là ${money(walletBalance.value)}.`,tone:'good'})
   items.push({icon:savingRate.value>=20?'🐷':'🎯',title:'Khả năng tiết kiệm',text:income>0?`Tỷ lệ để dành hiện khoảng ${savingRate.value}%.`:'Ghi thêm thu nhập để xem tỷ lệ tiết kiệm.',tone:savingRate.value>=20?'good':'info'})
   return items.slice(0,4)
 })
-async function submitAuth(){try{error.value=''; const res=authMode.value==='login'?await api.login(auth):await api.register(auth); setToken(res.token); user.value=res.user; loadGoalHistory(); await loadData(); success(authMode.value==='login'?'Đăng nhập thành công':'Đăng ký thành công')}catch(e){fail(e,'Không đăng nhập được')}}
+const notifications=computed(()=>{
+  const items=[]
+  // Nợ/cho vay đến hạn hoặc quá hạn (trong vòng 3 ngày)
+  for(const d of debts.value){
+    if(d.status==='done'||!d.dueDate) continue
+    const end=new Date(d.dueDate+'T23:59:59')
+    const diffDays=Math.ceil((end-new Date())/86400000)
+    if(diffDays<=3){
+      const who=d.kind==='borrow'?'Bạn nợ':'Cho vay'
+      const when=diffDays<0?`Quá hạn ${Math.abs(diffDays)} ngày`:diffDays===0?'Đến hạn hôm nay':`Còn ${diffDays} ngày`
+      items.push({id:'debt-'+d.id,icon:d.kind==='borrow'?'🔴':'🟡',title:`${who} ${d.person} — ${displayMoney(d.amount)}`,text:when,section:'debts'})
+    }
+  }
+  // Chưa ghi giao dịch hôm nay
+  const hasToday=expenses.value.some(e=>e.date===today)
+  if(!hasToday) items.push({id:'no-entry-'+today,icon:'📝',title:'Chưa ghi giao dịch hôm nay',text:'Hãy thêm ít nhất 1 khoản thu/chi để theo dõi tài chính.',section:'transactions'})
+  return items
+})
+const unreadCount=computed(()=>notifications.value.filter(n=>!notifRead.value.includes(n.id)).length)
+function notifKey(){return 'notifRead:'+(user.value?.id||user.value?.email||'guest')}
+function loadNotifRead(){try{notifRead.value=JSON.parse(localStorage.getItem(notifKey())||'[]')}catch(_){notifRead.value=[]}}
+function saveNotifRead(){localStorage.setItem(notifKey(),JSON.stringify(notifRead.value))}
+function toggleNotif(){
+  notifOpen.value=!notifOpen.value
+  if(notifOpen.value){
+    // đánh dấu tất cả hiện tại là đã đọc
+    const ids=[...new Set([...notifRead.value,...notifications.value.map(n=>n.id)])]
+    notifRead.value=ids
+    saveNotifRead()
+  }
+}
+function gotoNotif(item){activeSection.value=item.section; notifOpen.value=false}
+async function submitAuth(){try{error.value=''; const res=authMode.value==='login'?await api.login(auth):await api.register(auth); setToken(res.token); user.value=res.user; loadGoalHistory(); loadNotifRead(); await loadData(); success(authMode.value==='login'?'Đăng nhập thành công':'Đăng ký thành công')}catch(e){fail(e,'Không đăng nhập được')}}
 async function logout(){await api.logout().catch(()=>{}); setToken(''); user.value=null}
-async function loadData(){try{const [ex,sm,ws,gs,ds,rem]=await Promise.all([api.expenses(filters),api.summary(dashboardQuery()),api.wallets(),api.goals(),api.debts(),api.reminder()]); expenses.value=ex; summary.value=sm; wallets.value=ws; goals.value=gs; debts.value=ds; Object.assign(telegramReminder,{enabled:!!rem.enabled,time:rem.time||'21:00',telegramChatId:rem.telegramChatId||''}); if(!form.walletId&&coreWallets.value[0])form.walletId=coreWallets.value[0].id; if(!debt.walletId&&coreWallets.value[0])debt.walletId=coreWallets.value[0].id}catch(e){fail(e,'Không tải được dữ liệu')}}
+async function loadData(){try{const [ex,sm,ws,gs,ds,rem]=await Promise.all([api.expenses(filters),api.summary(dashboardFilterApplied.value ? dashboardQuery() : {}),api.wallets(),api.goals(),api.debts(),api.reminder()]); expenses.value=ex; summary.value=sm; wallets.value=ws; goals.value=gs; debts.value=ds; Object.assign(telegramReminder,{enabled:!!rem.enabled,time:rem.time||'21:00',telegramChatId:rem.telegramChatId||''}); if(!form.walletId&&coreWallets.value[0])form.walletId=coreWallets.value[0].id; if(!debt.walletId&&coreWallets.value[0])debt.walletId=coreWallets.value[0].id}catch(e){fail(e,'Không tải được dữ liệu')}}
 function debouncedLoad(){clearTimeout(timer); timer=setTimeout(loadData,250)}
 function toast(type,title,message){
   const id=Date.now()+Math.random()
@@ -517,5 +573,5 @@ function plainMoney(v){return new Intl.NumberFormat('vi-VN').format(v||0)}
 function formatDate(v){return new Intl.DateTimeFormat('vi-VN').format(new Date(v))}
 function formatTime(v){const d=v?new Date(v):new Date(); return d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}
 function walletName(id){return wallets.value.find(w=>w.id===id)?.name || 'Ví'}
-onMounted(async()=>{syncDarkClass(); try{const me=await api.me(); user.value=me; loadGoalHistory(); await loadData()}catch(_){}})
+onMounted(async()=>{syncDarkClass(); try{const me=await api.me(); user.value=me; loadGoalHistory(); loadNotifRead(); await loadData()}catch(_){}})
 </script>
