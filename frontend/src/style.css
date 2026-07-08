@@ -1590,6 +1590,12 @@ input[type="checkbox"]:checked:after{content:""!important;left:auto!important;to
 @media(max-width:860px){
   .debt-workspace{grid-template-columns:1fr}
 }
+/* Transaction query: expense amount red, income green */
+.bank-row-top strong.expense{color:#f87171!important}
+.bank-row-top strong.income{color:#34d399!important}
+.dark .bank-row-top strong.expense{color:#fca5a5!important}
+.dark .bank-row-top strong.income{color:#86efac!important}
+
 /* Dashboard polish fixes - 2026-07-08 */
 @media (min-width: 1180px){
   .shell{
