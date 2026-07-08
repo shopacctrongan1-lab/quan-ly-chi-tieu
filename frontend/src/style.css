@@ -1643,7 +1643,7 @@ input[type="checkbox"]:checked:after{content:""!important;left:auto!important;to
   gap: 14px !important;
 }
 .chart-controls.card{
-  display: grid !important;
+  display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(340px, 410px) !important;
   align-items: center !important;
   gap: 24px !important;
