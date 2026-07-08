@@ -30,13 +30,11 @@
           <h1>Dashboard tài chính</h1>
           <p class="muted">Quản lý thu chi, ví, nợ vay và mục tiêu trong từng khu vực riêng.</p>
         </div>
-        <div class="notif-wrap">
-          <button class="notif-bell" type="button" @click="toggleNotif" :aria-label="'Thông báo' + (unreadCount ? ' (' + unreadCount + ' chưa đọc)' : '')">
-            🔔
-            <span v-if="unreadCount > 0" class="notif-badge">{{ unreadCount }}</span>
-          </button>
-        </div>
       </section>
+      <button class="notif-bell" type="button" @click="toggleNotif" :aria-label="'Thông báo' + (unreadCount ? ' (' + unreadCount + ' chưa đọc)' : '')">
+        🔔
+        <span v-if="unreadCount > 0" class="notif-badge">{{ unreadCount }}</span>
+      </button>
       <teleport to="body">
         <div v-if="notifOpen" class="notif-backdrop" @click="notifOpen = false"></div>
         <div v-if="notifOpen" class="notif-panel" role="dialog" aria-label="Danh sách thông báo">
