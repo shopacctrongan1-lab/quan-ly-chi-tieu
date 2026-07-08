@@ -1467,7 +1467,7 @@ input[type="checkbox"]:checked:after{content:""!important;left:auto!important;to
   flex-direction:row-reverse;
   align-items:center;
   justify-content:flex-end;
-  gap:8px;
+  gap:10px;
   cursor:pointer;
   width:auto;
   max-width:100%;
@@ -1477,38 +1477,54 @@ input[type="checkbox"]:checked:after{content:""!important;left:auto!important;to
   border:0;
   box-shadow:none;
 }
-.toggle-row:hover{transform:none;box-shadow:none}
+.toggle-row:hover{transform:none!important;box-shadow:none!important;filter:none!important}
 .toggle-row input[type="checkbox"]{
-  flex-shrink:0;
-  width:40px!important;
-  min-width:40px!important;
-  height:22px!important;
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  flex-shrink:0!important;
+  width:42px!important;
+  min-width:42px!important;
+  height:24px!important;
   border-radius:999px!important;
-  border:1.5px solid rgba(148,163,184,.3)!important;
-  background:#d1d5db!important;
+  border:1.5px solid rgba(148,163,184,.35)!important;
+  background:#cbd5e1!important;
   box-shadow:none!important;
-  transition:background .2s,border-color .2s!important;
+  position:relative!important;
+  cursor:pointer!important;
+  transition:background .22s,border-color .22s!important;
+  transform:none!important;
 }
 .toggle-row input[type="checkbox"]:before{
   content:''!important;
-  display:block!important;
-  width:16px!important;
-  height:16px!important;
+  position:absolute!important;
+  width:18px!important;
+  height:18px!important;
+  left:2px!important;
+  top:2px!important;
   border-radius:50%!important;
   background:#fff!important;
-  box-shadow:0 1px 4px rgba(0,0,0,.18)!important;
-  transform:translateY(3px)!important;
-  transition:transform .2s!important;
+  box-shadow:0 2px 6px rgba(0,0,0,.22)!important;
+  transform:translateX(0)!important;
+  transition:transform .22s cubic-bezier(.2,.8,.2,1)!important;
 }
-.toggle-row input[type="checkbox"]:after{display:none!important}
+.toggle-row input[type="checkbox"]:after{
+  display:none!important;
+  content:none!important;
+}
 .toggle-row input[type="checkbox"]:checked{
   background:#3b82f6!important;
   border-color:#3b82f6!important;
 }
-.toggle-row input[type="checkbox"]:checked:before{transform:translateX(18px) translateY(3px)!important}
+.toggle-row input[type="checkbox"]:checked:before{
+  transform:translateX(18px)!important;
+}
+.toggle-row input[type="checkbox"]:hover{
+  transform:none!important;
+  box-shadow:none!important;
+}
 .toggle-row span{
-  font-size:13px;
-  font-weight:600;
+  font-size:14px;
+  font-weight:700;
   color:#374151;
   line-height:1.4;
   user-select:none;
@@ -1517,8 +1533,8 @@ input[type="checkbox"]:checked:after{content:""!important;left:auto!important;to
   background:#4b5563!important;
   border-color:#6b7280!important;
 }
-.dark .toggle-row input[type="checkbox"]:checked{background:#60a5fa!important;border-color:#60a5fa!important}
-.dark .toggle-row span{color:#d1d5db}
+.dark .toggle-row input[type="checkbox"]:checked{background:#3b82f6!important;border-color:#3b82f6!important}
+.dark .toggle-row span{color:#e2e8f0}
 
 /* Debt workspace */
 .debt-workspace{
